@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>私人餐厅档案</title>
+<meta name="theme-color" content="#FF8674">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="餐厅档案">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<main id="app">
+
+  <!-- ===================== 找店 tab ===================== -->
+  <section id="view-find" class="view">
+    <header class="page-header">
+      <h1>找店</h1>
+    </header>
+
+    <div id="reminder-stack" class="reminder-stack"></div>
+
+    <div class="find-controls">
+      <button id="btn-locate" class="btn btn-primary btn-locate">📍 获取我的位置</button>
+      <div class="segmented" id="find-view-toggle">
+        <button class="segmented-btn active" data-mode="map">地图</button>
+        <button class="segmented-btn" data-mode="list">列表</button>
+      </div>
+    </div>
+
+    <div class="range-slider-row">
+      <label for="range-slider">范围</label>
+      <select id="range-slider" class="range-select">
+        <option value="500">500m</option>
+        <option value="1000" selected>1km</option>
+        <option value="3000">3km</option>
+        <option value="5000">5km</option>
+        <option value="0">不限</option>
+      </select>
+      <button id="btn-filter-toggle" class="btn btn-ghost btn-small">筛选 ▾</button>
+      <button id="btn-pick-random" class="btn btn-accent btn-small">🎲 帮我选</button>
+    </div>
+
+    <div id="find-filter-panel" class="filter-panel hidden"></div>
+
+    <div id="find-map" class="find-map"></div>
+    <div id="find-list" class="find-list hidden"></div>
+
+    <div id="pin-card-container" class="pin-card-container hidden"></div>
+  </section>
+
+  <!-- ===================== 想去 tab ===================== -->
+  <section id="view-wantgo" class="view hidden">
+    <header class="page-header">
+      <h1>想去</h1>
+    </header>
+
+    <div class="segmented" id="wantgo-toggle">
+      <button class="segmented-btn active" data-sub="shops">🔖 店</button>
+      <button class="segmented-btn" data-sub="wishes">🍜 馋</button>
+    </div>
+
+    <!-- 店分区 -->
+    <div id="wantgo-shops" class="sub-panel">
+      <div class="quick-add-row">
+        <input id="shop-quick-input" type="text" placeholder="店名，比如「老王火锅」" maxlength="60">
+        <button id="shop-quick-add" class="btn btn-primary">+</button>
+      </div>
+      <div id="shop-decay-banner" class="decay-banner hidden"></div>
+      <div id="wantgo-shops-list" class="card-list"></div>
+      <div id="wantgo-shops-empty" class="empty-state hidden">
+        <p>还没有想去的店 🔖</p>
+        <p class="empty-sub">看到种草的店，先存下来</p>
+      </div>
+    </div>
+
+    <!-- 馋分区 -->
+    <div id="wantgo-wishes" class="sub-panel hidden">
+      <div class="quick-add-row">
+        <input id="wish-quick-input" type="text" placeholder="想吃点什么？比如「荞麦冷面」" maxlength="80">
+        <button id="wish-quick-add" class="btn btn-primary">+</button>
+      </div>
+      <div id="wish-decay-banner" class="decay-banner hidden"></div>
+      <div id="wantgo-wishes-list" class="card-list"></div>
+      <div id="wantgo-wishes-empty" class="empty-state hidden">
+        <p>还没有馋的东西 🍜</p>
+        <p class="empty-sub">馋一口，先记一句</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 认可档案 tab ===================== -->
+  <section id="view-archive" class="view hidden">
+    <header class="page-header">
+      <h1>档案</h1>
+      <button id="btn-archive-filter" class="btn btn-ghost btn-small">筛选 ▾</button>
+    </header>
+    <div id="archive-filter-panel" class="filter-panel hidden"></div>
+    <div id="archive-list" class="card-list"></div>
+    <div id="archive-empty" class="empty-state hidden">
+      <p>档案还是空的 ✅</p>
+      <p class="empty-sub">去「想去」里认可几家店吧</p>
+    </div>
+  </section>
+
+  <!-- ===================== 设置 tab ===================== -->
+  <section id="view-settings" class="view hidden">
+    <header class="page-header">
+      <h1>设置</h1>
+    </header>
+
+    <div class="settings-stats card">
+      <div class="stat-row"><span>认可餐厅</span><b id="stat-restaurants">0</b></div>
+      <div class="stat-row"><span>想去的店</span><b id="stat-wishlist-shops">0</b></div>
+      <div class="stat-row"><span>心愿</span><b id="stat-wishes">0</b></div>
+      <div class="stat-row"><span>照片占用</span><b id="stat-photo-size">0 KB</b></div>
+      <div class="stat-row"><span>距上次备份</span><b id="stat-last-backup">从未备份</b></div>
+    </div>
+
+    <div class="settings-section card">
+      <h3>数据备份</h3>
+      <button id="btn-export-text" class="btn btn-secondary btn-full">导出仅文字 JSON</button>
+      <button id="btn-export-full" class="btn btn-secondary btn-full">导出完整备份（含图片）</button>
+      <label class="btn btn-secondary btn-full file-btn">
+        导入恢复
+        <input id="input-import-file" type="file" accept=".json,.rdb.json,application/json" hidden>
+      </label>
+    </div>
+
+    <div class="settings-section card">
+      <h3>地图服务（高德，可选）</h3>
+      <p class="form-hint" style="margin-bottom:10px; line-height:1.6;">
+        配置后可在餐厅详情页"高德搜索同品牌分店"，一键批量导入连锁店的其他门店。
+        去 console.amap.com 免费注册开发者账号并创建应用，平台类型选"Web端(JS API)"，
+        拿到 Key 和安全密钥后填在下面。不填也完全不影响其他功能。
+      </p>
+      <div class="form-field">
+        <label>高德 Key</label>
+        <input type="text" id="setting-amap-key" placeholder="Web端(JS API) Key">
+      </div>
+      <div class="form-field">
+        <label>安全密钥</label>
+        <input type="text" id="setting-amap-security" placeholder="创建应用时一并生成的安全密钥">
+      </div>
+      <button id="btn-save-amap" class="btn btn-secondary btn-full">保存高德配置</button>
+      <p class="form-hint" id="amap-status"></p>
+    </div>
+
+    <div class="settings-section card">
+      <h3>提醒设置</h3>
+      <div class="setting-field">
+        <label>回味提醒（天）</label>
+        <input id="setting-revisit-days" type="number" min="7" max="365" value="90">
+      </div>
+      <div class="setting-field">
+        <label>想去防腐（天）</label>
+        <input id="setting-shop-decay-days" type="number" min="7" max="365" value="60">
+      </div>
+      <div class="setting-field">
+        <label>心愿防腐（天）</label>
+        <input id="setting-wish-decay-days" type="number" min="7" max="365" value="90">
+      </div>
+      <button id="btn-save-settings" class="btn btn-primary btn-full">保存设置</button>
+    </div>
+
+    <div class="settings-section card">
+      <h3>已忽略的提醒</h3>
+      <div id="dismissed-list" class="dismissed-list"></div>
+    </div>
+
+    <p class="version-tag">私人餐厅档案 · v1.0</p>
+  </section>
+
+</main>
+
+<nav id="bottom-nav" class="bottom-nav">
+  <button class="nav-btn active" data-view="find">
+    <span class="nav-icon">📍</span><span class="nav-label">找店</span>
+  </button>
+  <button class="nav-btn" data-view="wantgo">
+    <span class="nav-icon">🔖</span><span class="nav-label">想去</span>
+  </button>
+  <button class="nav-btn" data-view="archive">
+    <span class="nav-icon">✅</span><span class="nav-label">档案</span>
+  </button>
+  <button class="nav-btn" data-view="settings">
+    <span class="nav-icon">⚙️</span><span class="nav-label">设置</span>
+  </button>
+</nav>
+
+<!-- 通用弹层根节点 -->
+<div id="modal-root"></div>
+<div id="sheet-root"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="js/utils.js"></script>
+<script src="js/constants.js"></script>
+<script src="js/db.js"></script>
+<script src="js/amap.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/reminders.js"></script>
+<script src="js/views/restaurant-form.js"></script>
+<script src="js/views/wantgo.js"></script>
+<script src="js/views/archive.js"></script>
+<script src="js/views/find.js"></script>
+<script src="js/views/settings.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
