@@ -1,13 +1,13 @@
 {
-  "name": "私人餐厅档案",
-  "short_name": "餐厅档案",
-  "description": "管理我和餐厅的关系：想去、认可、找店、回味",
+  "name": "回味 Aftertaste",
+  "short_name": "回味",
+  "description": "记住每一家值得再去的店",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFF7F0",
-  "theme_color": "#FF8674",
+  "background_color": "#F0C9CA",
+  "theme_color": "#AD5A4E",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'restaurant-diary-v2';
+const CACHE_NAME = 'aftertaste-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
