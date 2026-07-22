@@ -62,27 +62,74 @@ const WantGo = (() => {
     listEl.innerHTML = '';
     emptyEl.classList.toggle('hidden', shops.length > 0);
 
+    // 同品牌的多家分店合并成一张可展开的卡片，避免想去列表被同一个连锁刷屏
+    const groups = new Map(); // brand -> shops[]
+    const singles = [];
     for (const shop of shops) {
-      const isDecayed = Utils.daysSince(shop.addedAt) > decayDays;
-      const card = UI.el(`
-        <div class="shop-card ${isDecayed ? 'decayed' : ''}">
-          <div class="card-top-row">
-            <div class="card-thumb-placeholder">🔖</div>
-            <div class="card-title-block">
-              <p class="card-title">${Utils.escapeHTML(shop.name)}</p>
-              <p class="card-subtitle">${shop.links && shop.links.length ? shop.links.map((l) => Utils.detectLinkSource(l.url).icon).join(' ') : '存入 ' + shop.addedAt}</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-primary btn-approve">认可 ✅</button>
-            <button class="btn btn-ghost btn-drop">拔草 ❌</button>
+      if (shop.brand) {
+        if (!groups.has(shop.brand)) groups.set(shop.brand, []);
+        groups.get(shop.brand).push(shop);
+      } else {
+        singles.push(shop);
+      }
+    }
+
+    const items = []; // { sortKey, el }
+    for (const shop of singles) {
+      items.push({ sortKey: shop.addedAt || '', el: buildShopCard(shop, decayDays) });
+    }
+    for (const [brand, branchShops] of groups) {
+      if (branchShops.length === 1) {
+        items.push({ sortKey: branchShops[0].addedAt || '', el: buildShopCard(branchShops[0], decayDays) });
+      } else {
+        const latestAdded = branchShops.reduce((max, s) => (s.addedAt || '') > max ? (s.addedAt || '') : max, '');
+        items.push({ sortKey: latestAdded, el: buildShopGroupCard(brand, branchShops, decayDays) });
+      }
+    }
+    items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+    items.forEach((item) => listEl.appendChild(item.el));
+  }
+
+  function buildShopCard(shop, decayDays) {
+    const isDecayed = Utils.daysSince(shop.addedAt) > decayDays;
+    const card = UI.el(`
+      <div class="shop-card ${isDecayed ? 'decayed' : ''}">
+        <div class="card-top-row">
+          <div class="card-thumb-placeholder">🔖</div>
+          <div class="card-title-block">
+            <p class="card-title">${Utils.escapeHTML(shop.name)}</p>
+            <p class="card-subtitle">${shop.links && shop.links.length ? shop.links.map((l) => Utils.detectLinkSource(l.url).icon).join(' ') : '存入 ' + shop.addedAt}</p>
           </div>
         </div>
-      `);
-      card.querySelector('.btn-approve').onclick = () => openApproveSheet(shop);
-      card.querySelector('.btn-drop').onclick = () => dropShop(shop);
-      listEl.appendChild(card);
-    }
+        <div class="card-actions">
+          <button class="btn btn-primary btn-approve">认可 ✅</button>
+          <button class="btn btn-ghost btn-drop">拔草 ❌</button>
+        </div>
+      </div>
+    `);
+    card.querySelector('.btn-approve').onclick = () => openApproveSheet(shop);
+    card.querySelector('.btn-drop').onclick = () => dropShop(shop);
+    return card;
+  }
+
+  function buildShopGroupCard(brand, branchShops, decayDays) {
+    const group = UI.el(`
+      <details class="shop-card shop-group">
+        <summary class="card-top-row">
+          <div class="card-thumb-placeholder">🏷️</div>
+          <div class="card-title-block">
+            <p class="card-title">${Utils.escapeHTML(brand)}</p>
+            <p class="card-subtitle">${branchShops.length} 家分店 · 点开选择</p>
+          </div>
+        </summary>
+        <div class="shop-group-branches"></div>
+      </details>
+    `);
+    const branchContainer = group.querySelector('.shop-group-branches');
+    branchShops
+      .sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''))
+      .forEach((shop) => branchContainer.appendChild(buildShopCard(shop, decayDays)));
+    return group;
   }
 
   async function dropShop(shop) {
