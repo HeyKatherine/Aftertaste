@@ -207,10 +207,11 @@ const Archive = (() => {
       }
 
       body.innerHTML = `
+        <p class="form-hint" style="margin-bottom:8px;">勾选你实际会考虑去的分店，别一股脑全加进想去清单</p>
         <div class="link-list" id="amap-results">
           ${pois.map((p, i) => `
-            <label class="link-row" style="align-items:flex-start;">
-              <input type="checkbox" data-idx="${i}" ${existingNames.has(p.name) ? '' : 'checked'} style="margin-top:4px;">
+            <label class="link-row" style="align-items:flex-start; ${existingNames.has(p.name) ? 'opacity:0.5;' : ''}">
+              <input type="checkbox" data-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
               <span style="flex:1;">
                 <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}<br>
                 <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
@@ -218,9 +219,18 @@ const Archive = (() => {
             </label>
           `).join('')}
         </div>
-        <button type="button" class="btn btn-primary btn-full" id="amap-import" style="margin-top:14px;">批量加入想去</button>
+        <button type="button" class="btn btn-primary btn-full" id="amap-import" style="margin-top:14px;" disabled>加入想去（0）</button>
       `;
-      body.querySelector('#amap-import').onclick = async () => {
+      const importBtn = body.querySelector('#amap-import');
+      function updateImportBtn() {
+        const n = body.querySelectorAll('#amap-results input:checked').length;
+        importBtn.textContent = `加入想去（${n}）`;
+        importBtn.disabled = n === 0;
+      }
+      body.querySelectorAll('#amap-results input[type="checkbox"]').forEach((cb) => {
+        cb.addEventListener('change', updateImportBtn);
+      });
+      importBtn.onclick = async () => {
         const checked = [...body.querySelectorAll('#amap-results input:checked')];
         for (const cb of checked) {
           const p = pois[Number(cb.dataset.idx)];
