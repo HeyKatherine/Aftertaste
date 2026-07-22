@@ -36,7 +36,12 @@
         <button class="segmented-btn" data-mode="list">列表</button>
       </div>
     </div>
-    <p class="form-hint" style="margin: -6px 0 10px;">或点击地图任意位置，把那里设为参考位置</p>
+    <div class="quick-add-row" style="margin-bottom:6px;">
+      <input type="text" id="find-address-input" placeholder="输入地址，搜索并设为参考位置">
+      <button type="button" class="btn btn-secondary" id="find-address-search">搜索</button>
+    </div>
+    <div id="find-address-results" class="link-list hidden"></div>
+    <p class="form-hint" style="margin: -2px 0 10px;">或直接点击地图任意位置，把那里设为参考位置</p>
 
     <div class="range-slider-row">
       <label for="range-slider">范围</label>

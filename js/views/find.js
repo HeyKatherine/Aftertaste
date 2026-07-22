@@ -28,6 +28,57 @@ const Find = (() => {
       document.getElementById('find-filter-panel').classList.toggle('hidden');
     });
     document.getElementById('btn-pick-random').addEventListener('click', () => openPicker());
+
+    document.getElementById('find-address-search').addEventListener('click', runAddressSearch);
+    document.getElementById('find-address-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); runAddressSearch(); }
+    });
+  }
+
+  async function runAddressSearch() {
+    const input = document.getElementById('find-address-input');
+    const keyword = input.value.trim();
+    const resultsEl = document.getElementById('find-address-results');
+    if (!keyword) { UI.toast('先输入地址'); return; }
+    resultsEl.classList.remove('hidden');
+    resultsEl.innerHTML = '<p class="form-hint">搜索中…</p>';
+    try {
+      const configured = await AMapService.isConfigured();
+      if (!configured) {
+        resultsEl.innerHTML = `
+          <p class="form-hint">还没有配置高德 Key，去设置页填写后才能搜索地址。</p>
+          <button type="button" class="btn btn-primary btn-full" id="find-address-goto-settings" style="margin-top:8px;">去设置填写</button>
+        `;
+        resultsEl.querySelector('#find-address-goto-settings').onclick = () => App.switchView('settings');
+        return;
+      }
+      const pois = await AMapService.searchPOI(keyword);
+      if (!pois.length) {
+        resultsEl.innerHTML = '<p class="form-hint">没搜到，换个关键词试试。</p>';
+        return;
+      }
+      resultsEl.innerHTML = pois.map((p, i) => `
+        <div class="link-row" data-idx="${i}" style="cursor:pointer; align-items:flex-start;">
+          <span style="flex:1;">
+            <b>${Utils.escapeHTML(p.name)}</b><br>
+            <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
+          </span>
+        </div>
+      `).join('');
+      resultsEl.querySelectorAll('[data-idx]').forEach((row) => {
+        row.onclick = () => {
+          const p = pois[Number(row.dataset.idx)];
+          if (!p.location) { UI.toast('这条结果没有坐标'); return; }
+          const wgs84 = Utils.gcj02ToWgs84(p.location.lng, p.location.lat);
+          setReferenceLocation(wgs84.lat, wgs84.lng, p.name, '#8B5CF6', '#C4B5FD');
+          resultsEl.classList.add('hidden');
+          resultsEl.innerHTML = '';
+          UI.toast(`已把「${p.name}」设为参考位置`);
+        };
+      });
+    } catch (e) {
+      resultsEl.innerHTML = `<p class="form-hint">${Utils.escapeHTML(e.message)}</p>`;
+    }
   }
 
   function applyViewMode() {
