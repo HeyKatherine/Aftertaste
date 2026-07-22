@@ -61,6 +61,18 @@ const Reminders = (() => {
       }
     }
 
+    const missingLocation = approved.filter((r) => !r.location);
+    if (missingLocation.length) {
+      const key = 'missingLocation:agg';
+      if (!muted.includes(key) && !sessionIgnored.has(key)) {
+        items.push({
+          key, type: 'missingLocation',
+          text: `${missingLocation.length} 家认可餐厅没填坐标，地图上看不到`,
+          action: () => Archive.openMissingLocationList(),
+        });
+      }
+    }
+
     return items;
   }
 
@@ -100,6 +112,7 @@ const Reminders = (() => {
     }
     if (type === 'shopDecay') return '想去防腐提醒';
     if (type === 'wishDecay') return '心愿防腐提醒';
+    if (type === 'missingLocation') return '缺坐标提醒';
     return key;
   }
 

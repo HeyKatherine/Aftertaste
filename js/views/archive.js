@@ -253,5 +253,52 @@ const Archive = (() => {
     }
   }
 
-  return { init, renderList, openDetail };
+  async function openMissingLocationList() {
+    const all = await DB.Restaurants.all();
+    const missing = all.filter((r) => r.status === 'approved' && !r.location);
+    const sheet = UI.openSheet(`
+      <div class="sheet-header"><h2>缺坐标的认可餐厅</h2><button class="sheet-close">✕</button></div>
+      <p class="form-hint" style="margin-bottom:10px;">这些店没有坐标，地图上看不到图钉，点"编辑补坐标"用高德搜地址或定位补一下</p>
+      <div class="card-list" id="missing-location-list"></div>
+    `);
+    sheet.querySelector('.sheet-close').onclick = UI.closeSheet;
+    const listEl = sheet.querySelector('#missing-location-list');
+
+    if (!missing.length) {
+      listEl.innerHTML = '<p class="form-hint">都补全啦 🎉</p>';
+      return;
+    }
+    missing.forEach((r) => {
+      const row = UI.el(`
+        <div class="shop-card">
+          <div class="card-top-row">
+            <div class="card-thumb-placeholder">📍</div>
+            <div class="card-title-block">
+              <p class="card-title">${Utils.escapeHTML(r.name)}</p>
+              <p class="card-subtitle">${Utils.escapeHTML(r.region || '')}</p>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-fix">编辑补坐标</button>
+          </div>
+        </div>
+      `);
+      row.querySelector('.btn-fix').onclick = () => {
+        RestaurantForm.open({
+          initial: r,
+          title: '编辑餐厅',
+          submitLabel: '保存',
+          onSubmit: async (patch) => {
+            await DB.Restaurants.update(r.id, patch);
+            UI.toast('已保存');
+            App.notifyDataChanged();
+            if (patch.location) openMissingLocationList();
+          },
+        });
+      };
+      listEl.appendChild(row);
+    });
+  }
+
+  return { init, renderList, openDetail, openMissingLocationList };
 })();
