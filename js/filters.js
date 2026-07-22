@@ -1,7 +1,6 @@
 // ============ 共享筛选器（菜系 / 场景 / 人均 / 评级 / 城市） ============
 const Filters = (() => {
   function createPanel(container, restaurants, onChange) {
-    const cuisines = [...new Set(restaurants.map((r) => r.cuisine).filter(Boolean))];
     const cities = [...new Set(restaurants.map((r) => r.region).filter(Boolean))];
     const brands = [...new Set(restaurants.map((r) => r.brand).filter(Boolean))];
 
@@ -15,13 +14,12 @@ const Filters = (() => {
           ${brands.map((b) => `<span class="filter-chip" data-value="${Utils.escapeHTML(b)}">${Utils.escapeHTML(b)}</span>`).join('')}
         </div>
       </div>` : ''}
-      ${cuisines.length ? `
       <div class="filter-group">
         <label>菜系</label>
         <div class="filter-chip-row" data-key="cuisine">
-          ${cuisines.map((c) => `<span class="filter-chip" data-value="${Utils.escapeHTML(c)}">${Utils.escapeHTML(c)}</span>`).join('')}
+          ${Constants.CUISINES.map((c) => `<span class="filter-chip" data-value="${c}">${c}</span>`).join('')}
         </div>
-      </div>` : ''}
+      </div>
       <div class="filter-group">
         <label>场景</label>
         <div class="filter-chip-row" data-key="scene">
