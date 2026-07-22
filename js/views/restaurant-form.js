@@ -34,7 +34,9 @@ const RestaurantForm = (() => {
         </div>
         <div class="form-field">
           <label>菜系</label>
-          <input type="text" id="rf-cuisine" placeholder="比如 川菜火锅" value="${Utils.escapeHTML(initial.cuisine || '')}">
+          <div class="chip-select-row" id="rf-cuisine">
+            ${Constants.CUISINES.map((c) => `<span class="chip-select" data-value="${c}">${c}</span>`).join('')}
+          </div>
         </div>
         <div class="form-field">
           <label>场景</label>
@@ -116,6 +118,19 @@ const RestaurantForm = (() => {
       ratingRow.querySelectorAll('.chip-select').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
       selectedRating = chip.dataset.value;
+    });
+    let selectedCuisine = initial.cuisine || '';
+    const cuisineRow = sheet.querySelector('#rf-cuisine');
+    cuisineRow.querySelectorAll('.chip-select').forEach((chip) => {
+      if (chip.dataset.value === selectedCuisine) chip.classList.add('active');
+    });
+    cuisineRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      const wasActive = chip.classList.contains('active');
+      cuisineRow.querySelectorAll('.chip-select').forEach((c) => c.classList.remove('active'));
+      selectedCuisine = wasActive ? '' : chip.dataset.value;
+      if (!wasActive) chip.classList.add('active');
     });
     const sceneRow = sheet.querySelector('#rf-scene');
     sceneRow.querySelectorAll('.chip-select').forEach((chip) => {
@@ -214,7 +229,7 @@ const RestaurantForm = (() => {
         name,
         brand: sheet.querySelector('#rf-brand').value.trim(),
         myRating: selectedRating,
-        cuisine: sheet.querySelector('#rf-cuisine').value.trim(),
+        cuisine: selectedCuisine,
         scene: [...selectedScenes],
         pricePerPerson: sheet.querySelector('#rf-price').value ? Number(sheet.querySelector('#rf-price').value) : null,
         tags,
