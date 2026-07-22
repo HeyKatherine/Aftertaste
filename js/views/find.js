@@ -44,6 +44,22 @@ const Find = (() => {
       maxZoom: 19,
       attribution: '© OpenStreetMap',
     }).addTo(map);
+    // 点击地图任意位置即可把该点设为参考位置，不依赖 GPS
+    map.on('click', (e) => {
+      setReferenceLocation(e.latlng.lat, e.latlng.lng, '参考位置', '#8B5CF6', '#C4B5FD');
+      UI.toast('已把这里设为参考位置');
+    });
+  }
+
+  function setReferenceLocation(lat, lng, label, color, fillColor) {
+    currentLocation = { lat, lng };
+    ensureMap();
+    map.setView([lat, lng], 15);
+    if (userMarker) map.removeLayer(userMarker);
+    userMarker = L.circleMarker([lat, lng], {
+      radius: 8, color, fillColor, fillOpacity: 0.9, weight: 2,
+    }).addTo(map).bindTooltip(label);
+    refresh();
   }
 
   function locate() {
@@ -53,16 +69,9 @@ const Find = (() => {
     btn.textContent = '定位中…';
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         btn.disabled = false;
         btn.textContent = '📍 已定位';
-        ensureMap();
-        map.setView([currentLocation.lat, currentLocation.lng], 15);
-        if (userMarker) map.removeLayer(userMarker);
-        userMarker = L.circleMarker([currentLocation.lat, currentLocation.lng], {
-          radius: 8, color: '#3B82F6', fillColor: '#60A5FA', fillOpacity: 0.9, weight: 2,
-        }).addTo(map).bindTooltip('我在这里');
-        refresh();
+        setReferenceLocation(pos.coords.latitude, pos.coords.longitude, '我在这里', '#3B82F6', '#60A5FA');
       },
       (err) => {
         btn.disabled = false;
