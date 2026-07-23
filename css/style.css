@@ -211,7 +211,7 @@ input, select { font-family: inherit; }
 .pin-card-container {
   position: fixed; left: 0; right: 0; bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 10px);
   display: flex; overflow-x: auto; gap: 12px; padding: 4px 16px 8px;
-  scroll-snap-type: x mandatory; z-index: 90;
+  scroll-snap-type: x mandatory; z-index: 1500;
 }
 .pin-card {
   scroll-snap-align: center; flex: 0 0 82%; max-width: 340px;
