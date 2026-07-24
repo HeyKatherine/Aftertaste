@@ -32,6 +32,20 @@ const Settings = (() => {
     document.getElementById('btn-export-full').addEventListener('click', () => doExport(true));
     document.getElementById('input-import-file').addEventListener('change', handleImportFile);
     document.getElementById('btn-save-amap').addEventListener('click', saveAmapConfig);
+    document.getElementById('btn-clear-cache').addEventListener('click', clearCacheAndReload);
+  }
+
+  async function clearCacheAndReload() {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) await reg.unregister();
+      const keys = await caches.keys();
+      for (const k of keys) await caches.delete(k);
+      UI.toast('已清除，正在刷新…');
+    } catch (e) {
+      console.warn('清除缓存失败', e);
+    }
+    setTimeout(() => location.reload(), 400);
   }
 
   async function saveAmapConfig() {
