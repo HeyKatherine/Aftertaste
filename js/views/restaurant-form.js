@@ -176,17 +176,25 @@ const RestaurantForm = (() => {
           amapResults.innerHTML = '<p class="form-hint">没搜到，换个关键词试试。</p>';
           return;
         }
-        amapResults.innerHTML = pois.map((p, i) => `
-          <div class="link-row" data-idx="${i}" style="cursor:pointer; align-items:flex-start;">
-            <span style="flex:1;">
-              <b>${Utils.escapeHTML(p.name)}</b><br>
+        const existingNames = new Set((await DB.Restaurants.all()).map((x) => x.name));
+        amapResults.innerHTML = `
+          <p class="form-hint" style="margin: 4px 0 8px;">点店名把坐标填给当前这家；勾选其他分店可以批量加进想去</p>
+          <div id="rf-amap-result-rows"></div>
+          <button type="button" class="btn btn-secondary btn-full" id="rf-amap-bulk-import" style="margin-top:10px;" disabled>批量加入想去（0）</button>
+        `;
+        const rowsEl = amapResults.querySelector('#rf-amap-result-rows');
+        rowsEl.innerHTML = pois.map((p, i) => `
+          <div class="link-row" style="align-items:flex-start;">
+            <input type="checkbox" data-bulk-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
+            <span style="flex:1; cursor:pointer;" ${existingNames.has(p.name) ? '' : `data-pick-idx="${i}"`}>
+              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}<br>
               <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
             </span>
           </div>
         `).join('');
-        amapResults.querySelectorAll('[data-idx]').forEach((row) => {
-          row.onclick = () => {
-            const p = pois[Number(row.dataset.idx)];
+        rowsEl.querySelectorAll('[data-pick-idx]').forEach((span) => {
+          span.onclick = () => {
+            const p = pois[Number(span.dataset.pickIdx)];
             if (!p.location) { UI.toast('这条结果没有坐标'); return; }
             const wgs84 = Utils.gcj02ToWgs84(p.location.lng, p.location.lat);
             sheet.querySelector('#rf-lat').value = wgs84.lat.toFixed(6);
@@ -198,6 +206,34 @@ const RestaurantForm = (() => {
             UI.toast(`已选择「${p.name}」的坐标`);
           };
         });
+        const bulkBtn = amapResults.querySelector('#rf-amap-bulk-import');
+        function updateBulkBtn() {
+          const n = rowsEl.querySelectorAll('input:checked').length;
+          bulkBtn.textContent = `批量加入想去（${n}）`;
+          bulkBtn.disabled = n === 0;
+        }
+        rowsEl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+          cb.addEventListener('change', updateBulkBtn);
+        });
+        bulkBtn.onclick = async () => {
+          const brand = sheet.querySelector('#rf-brand').value.trim();
+          const checked = [...rowsEl.querySelectorAll('input:checked')];
+          for (const cb of checked) {
+            const p = pois[Number(cb.dataset.bulkIdx)];
+            const location = p.location ? Utils.gcj02ToWgs84(p.location.lng, p.location.lat) : null;
+            await DB.Restaurants.create({
+              name: p.name,
+              brand,
+              status: 'wishlist',
+              region: p.city || '',
+              location,
+              notes: p.address || '',
+            });
+          }
+          UI.toast(`已加入 ${checked.length} 家到想去`);
+          App.notifyDataChanged();
+          amapPanel.classList.add('hidden');
+        };
       } catch (e) {
         amapResults.innerHTML = `<p class="form-hint">${Utils.escapeHTML(e.message)}</p>`;
       }
