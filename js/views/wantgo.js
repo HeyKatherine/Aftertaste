@@ -319,7 +319,7 @@ const WantGo = (() => {
       App.notifyDataChanged();
     };
     sheet.querySelector('#wish-link-save').onclick = async () => {
-      const externalLink = sheet.querySelector('#wish-link-external').value.trim();
+      const externalLink = Utils.normalizeUrl(sheet.querySelector('#wish-link-external').value);
       await DB.Wishes.update(wish.id, {
         linkedRestaurantId: chosenRestaurantId,
         externalLink: externalLink || null,

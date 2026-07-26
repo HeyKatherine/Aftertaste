@@ -102,6 +102,16 @@ const Utils = (() => {
     return { key: 'other', icon: '🔗', label: '链接' };
   }
 
+  // 补全协议头：没有 http(s):// 前缀的链接当 <a href> 用会被当成本站内的相对路径，
+  // 点开跳到自己站点的 404，而且因为在 PWA scope 内，还没有返回按钮。
+  function normalizeUrl(url) {
+    const trimmed = (url || '').trim();
+    if (!trimmed) return trimmed;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed; // 已有协议头（http/https/其他）
+    if (trimmed.startsWith('//')) return 'https:' + trimmed;
+    return 'https://' + trimmed;
+  }
+
   // ---------- 图片压缩（长边≤1280px，质量0.7）----------
   function compressImage(file, { maxSize = 1280, quality = 0.7 } = {}) {
     return new Promise((resolve, reject) => {
@@ -165,7 +175,7 @@ const Utils = (() => {
   return {
     uuid, todayISO, daysSince, formatMonthsAgo,
     gcj02ToWgs84, haversineDistance, formatDistance,
-    detectLinkSource, LINK_SOURCES,
+    detectLinkSource, LINK_SOURCES, normalizeUrl,
     compressImage, blobToDataURL, formatBytes, escapeHTML,
   };
 })();

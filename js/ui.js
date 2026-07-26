@@ -130,7 +130,7 @@ const UI = (() => {
     }
     const input = addRow.querySelector('input');
     addRow.querySelector('button').onclick = () => {
-      const url = input.value.trim();
+      const url = Utils.normalizeUrl(input.value);
       if (!url) return;
       const src = Utils.detectLinkSource(url);
       links.push({ url, source: src.key });
