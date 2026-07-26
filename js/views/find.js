@@ -165,7 +165,12 @@ const Find = (() => {
     await Reminders.render(document.getElementById('reminder-stack'));
     const pool = await getPool();
     renderPins(pool.filter((r) => r.location));
-    await renderPinCards(pool.filter((r) => r.location).sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
+    // 没有参考位置（没定位/没搜索/没点地图）时，“附近”本身就不成立，卡片轮播先不出现
+    if (currentLocation) {
+      await renderPinCards(pool.filter((r) => r.location).sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
+    } else {
+      document.getElementById('pin-card-container').innerHTML = '';
+    }
     await renderList(pool.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
   }
 
