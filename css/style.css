@@ -208,16 +208,13 @@ input, select { font-family: inherit; }
 }
 .find-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
 
-.pin-card-container {
-  position: fixed; left: 0; right: 0; bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 10px);
-  display: flex; overflow-x: auto; gap: 12px; padding: 4px 16px 8px;
-  scroll-snap-type: x mandatory; z-index: 1500;
-}
-.pin-card {
-  scroll-snap-align: center; flex: 0 0 82%; max-width: 340px;
-  background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow);
-  padding: 12px 14px; display: flex; gap: 10px; align-items: center;
-}
+.map-popup-card { cursor: pointer; min-width: 140px; }
+.map-popup-card .card-title { font-size: 15px; font-weight: 800; margin: 0 0 4px; }
+.map-popup-card .card-subtitle { font-size: 12px; color: var(--text-secondary); margin: 0 0 4px; }
+.map-popup-card .card-note { font-size: 12px; color: var(--text-secondary); margin: 0; }
+.leaflet-popup-content { margin: 10px 12px; }
+.leaflet-popup-content-wrapper { background: var(--card-bg); color: var(--text); border-radius: var(--radius-md); }
+.leaflet-popup-tip { background: var(--card-bg); }
 
 .reminder-stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .reminder-card {
@@ -350,5 +347,3 @@ input, select { font-family: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* Leaflet popup theming */
-.leaflet-popup-content-wrapper { border-radius: var(--radius-md); }

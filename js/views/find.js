@@ -83,7 +83,6 @@ const Find = (() => {
 
   function applyViewMode() {
     document.getElementById('find-map').classList.toggle('hidden', viewMode !== 'map');
-    document.getElementById('pin-card-container').classList.toggle('hidden', viewMode !== 'map');
     document.getElementById('find-list').classList.toggle('hidden', viewMode !== 'list');
     if (viewMode === 'map') setTimeout(() => map && map.invalidateSize(), 50);
   }
@@ -99,6 +98,11 @@ const Find = (() => {
     map.on('click', (e) => {
       setReferenceLocation(e.latlng.lat, e.latlng.lng, '参考位置', '#8B5CF6', '#C4B5FD');
       UI.toast('已把这里设为参考位置');
+    });
+    // 图钉弹出的小卡片点一下直接进详情
+    map.on('popupopen', (e) => {
+      const card = e.popup.getElement()?.querySelector('.map-popup-card');
+      if (card) card.onclick = () => Archive.openDetail(card.dataset.id);
     });
   }
 
@@ -165,12 +169,6 @@ const Find = (() => {
     await Reminders.render(document.getElementById('reminder-stack'));
     const pool = await getPool();
     renderPins(pool.filter((r) => r.location));
-    // 没有参考位置（没定位/没搜索/没点地图）时，“附近”本身就不成立，卡片轮播先不出现
-    if (currentLocation) {
-      await renderPinCards(pool.filter((r) => r.location).sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
-    } else {
-      document.getElementById('pin-card-container').innerHTML = '';
-    }
     await renderList(pool.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
   }
 
@@ -187,44 +185,19 @@ const Find = (() => {
       const color = RATING_COLOR[r.myRating] || '#C9BBB4';
       const marker = L.circleMarker([r.location.lat, r.location.lng], {
         radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.95,
+        bubblingMouseEvents: false, // 点图钉不应该同时把这里设成新的参考位置
       }).addTo(map);
-      marker.bindTooltip(r.name, { direction: 'top' });
-      marker.on('click', () => {
-        const card = document.getElementById(`pin-card-${r.id}`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      });
-      markers.push(marker);
-    });
-  }
-
-  async function renderPinCards(restaurants) {
-    const container = document.getElementById('pin-card-container');
-    container.innerHTML = '';
-    for (const r of restaurants) {
-      const card = await buildPinCard(r);
-      card.id = `pin-card-${r.id}`;
-      container.appendChild(card);
-    }
-  }
-
-  async function buildPinCard(r) {
-    let thumbHTML = '<div class="card-thumb-placeholder">🍽️</div>';
-    if (r.photos && r.photos.length) {
-      const photo = await DB.Photos.get(r.photos[0]);
-      if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
-    }
-    const card = UI.el(`
-      <div class="pin-card">
-        ${thumbHTML}
-        <div class="card-title-block">
+      const subtitle = [r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
+        .filter(Boolean).map(Utils.escapeHTML).join(' · ');
+      marker.bindPopup(`
+        <div class="map-popup-card" data-id="${r.id}">
           <p class="card-title">${Utils.escapeHTML(r.name)}</p>
-          <p class="card-subtitle">${[r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
+          ${subtitle ? `<p class="card-subtitle">${subtitle}</p>` : ''}
           ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
         </div>
-      </div>
-    `);
-    card.addEventListener('click', () => Archive.openDetail(r.id));
-    return card;
+      `, { maxWidth: 220 });
+      markers.push(marker);
+    });
   }
 
   async function renderList(restaurants) {
