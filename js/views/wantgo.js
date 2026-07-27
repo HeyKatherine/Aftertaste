@@ -83,7 +83,7 @@ const WantGo = (() => {
         items.push({ sortKey: branchShops[0].addedAt || '', el: buildShopCard(branchShops[0], decayDays) });
       } else {
         const latestAdded = branchShops.reduce((max, s) => (s.addedAt || '') > max ? (s.addedAt || '') : max, '');
-        items.push({ sortKey: latestAdded, el: buildShopGroupCard(brand, branchShops, decayDays) });
+        items.push({ sortKey: latestAdded, el: await buildShopGroupCard(brand, branchShops, decayDays) });
       }
     }
     items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
@@ -112,11 +112,23 @@ const WantGo = (() => {
     return card;
   }
 
-  function buildShopGroupCard(brand, branchShops, decayDays) {
+  // 组内任意一家分店已经上传过照片的话，折叠卡片就用那张当封面，没有照片才退回品牌图标
+  async function pickGroupThumbHTML(branchList, fallbackEmoji) {
+    for (const r of branchList) {
+      if (r.photos && r.photos.length) {
+        const photo = await DB.Photos.get(r.photos[0]);
+        if (photo) return `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
+      }
+    }
+    return `<div class="card-thumb-placeholder">${fallbackEmoji}</div>`;
+  }
+
+  async function buildShopGroupCard(brand, branchShops, decayDays) {
+    const thumbHTML = await pickGroupThumbHTML(branchShops, '🏷️');
     const group = UI.el(`
       <details class="shop-card shop-group">
         <summary class="card-top-row">
-          <div class="card-thumb-placeholder">🏷️</div>
+          ${thumbHTML}
           <div class="card-title-block">
             <p class="card-title">${Utils.escapeHTML(brand)}</p>
             <p class="card-subtitle">${branchShops.length} 家分店 · 点开选择</p>

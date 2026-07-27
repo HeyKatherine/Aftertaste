@@ -59,11 +59,23 @@ const Archive = (() => {
     items.forEach((item) => listEl.appendChild(item.el));
   }
 
+  // 组内任意一家分店已经上传过照片的话，折叠卡片就用那张当封面，没有照片才退回品牌图标
+  async function pickGroupThumbHTML(branchList, fallbackEmoji) {
+    for (const r of branchList) {
+      if (r.photos && r.photos.length) {
+        const photo = await DB.Photos.get(r.photos[0]);
+        if (photo) return `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
+      }
+    }
+    return `<div class="card-thumb-placeholder">${fallbackEmoji}</div>`;
+  }
+
   async function buildGroupCard(brand, branchList) {
+    const thumbHTML = await pickGroupThumbHTML(branchList, '🏷️');
     const group = UI.el(`
       <details class="archive-card shop-group">
         <summary class="card-top-row">
-          <div class="card-thumb-placeholder">🏷️</div>
+          ${thumbHTML}
           <div class="card-title-block">
             <p class="card-title">${Utils.escapeHTML(brand)}</p>
             <p class="card-subtitle">${branchList.length} 家分店 · 点开选择</p>
