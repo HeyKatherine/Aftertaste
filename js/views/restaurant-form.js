@@ -176,7 +176,9 @@ const RestaurantForm = (() => {
           amapResults.innerHTML = '<p class="form-hint">没搜到，换个关键词试试。</p>';
           return;
         }
-        const existingNames = new Set((await DB.Restaurants.all()).map((x) => x.name));
+        const existingNames = new Set(
+          (await DB.Restaurants.all()).filter((x) => x.id !== initial.id).map((x) => x.name)
+        );
         amapResults.innerHTML = `
           <p class="form-hint" style="margin: 4px 0 8px;">点店名把坐标填给当前这家；勾选其他分店可以批量加进想去</p>
           <div id="rf-amap-result-rows"></div>
@@ -186,8 +188,8 @@ const RestaurantForm = (() => {
         rowsEl.innerHTML = pois.map((p, i) => `
           <div class="link-row" style="align-items:flex-start;">
             <input type="checkbox" data-bulk-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
-            <span style="flex:1; cursor:pointer;" ${existingNames.has(p.name) ? '' : `data-pick-idx="${i}"`}>
-              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}<br>
+            <span style="flex:1; cursor:pointer;" data-pick-idx="${i}">
+              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在，仍可点击选用坐标）</span>' : ''}<br>
               <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
             </span>
           </div>
