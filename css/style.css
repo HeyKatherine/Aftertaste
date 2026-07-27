@@ -249,7 +249,9 @@ input, select { font-family: inherit; }
   position: fixed; inset: 0; background: rgba(30, 20, 15, 0.4); z-index: 2000;
   display: flex; align-items: flex-end; justify-content: center;
 }
-.overlay-backdrop.modal-center { align-items: center; padding: 20px; }
+/* modal 可能在 sheet 还开着的时候弹出（比如详情页里点删除的二次确认），
+   必须比 sheet 的 z-index 高，不然纯靠 DOM 顺序会被后挂载的 sheet 盖住 */
+.overlay-backdrop.modal-center { align-items: center; padding: 20px; z-index: 2050; }
 .sheet {
   background: var(--bg); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
   border-radius: 24px 24px 0 0; padding: 18px 20px calc(24px + env(safe-area-inset-bottom));
