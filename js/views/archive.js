@@ -90,14 +90,14 @@ const Archive = (() => {
     if (r.location) {
       const { lat, lng } = r.location;
       const name = encodeURIComponent(r.name);
-      const appleUrl = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+      const baiduUrl = `https://api.map.baidu.com/direction?destination=${lat},${lng}&mode=driving&coord_type=wgs84&src=webapp`;
       const amapUrl = `https://uri.amap.com/navigation?to=${lng},${lat},${name}&mode=car&policy=1&coordinate=wgs84&callnative=1`;
       const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
       navHTML = `
         <div class="detail-field">
           <label>导航</label>
           <div class="external-links">
-            <a class="external-link-btn" href="${appleUrl}" target="_blank" rel="noopener">🍎 苹果地图</a>
+            <a class="external-link-btn" href="${baiduUrl}" target="_blank" rel="noopener">🧭 百度地图</a>
             <a class="external-link-btn" href="${amapUrl}" target="_blank" rel="noopener">🧭 高德地图</a>
             <a class="external-link-btn" href="${googleUrl}" target="_blank" rel="noopener">🌍 Google 地图</a>
           </div>
