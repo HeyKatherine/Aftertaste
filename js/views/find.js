@@ -99,10 +99,21 @@ const Find = (() => {
       setReferenceLocation(e.latlng.lat, e.latlng.lng, '参考位置', '#8B5CF6', '#C4B5FD');
       UI.toast('已把这里设为参考位置');
     });
-    // 图钉弹出的小卡片点一下直接进详情
-    map.on('popupopen', (e) => {
+    // 图钉弹出的小卡片点一下直接进详情；照片是异步取的，弹窗开出来之后再补上
+    map.on('popupopen', async (e) => {
       const card = e.popup.getElement()?.querySelector('.map-popup-card');
-      if (card) card.onclick = () => Archive.openDetail(card.dataset.id);
+      if (!card) return;
+      const id = card.dataset.id;
+      card.onclick = () => Archive.openDetail(id);
+      const r = await DB.Restaurants.get(id);
+      if (r && r.photos && r.photos.length) {
+        const photo = await DB.Photos.get(r.photos[0]);
+        const thumb = card.querySelector('.map-popup-thumb');
+        if (photo && thumb) {
+          thumb.outerHTML = `<img class="card-thumb map-popup-thumb" src="${URL.createObjectURL(photo.blob)}">`;
+          e.popup.update();
+        }
+      }
     });
   }
 
@@ -189,13 +200,17 @@ const Find = (() => {
       }).addTo(map);
       const subtitle = [r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
         .filter(Boolean).map(Utils.escapeHTML).join(' · ');
+      // 图片是异步取的，弹窗先用占位图标同步开出来，等 popupopen 时再补上真实照片
       marker.bindPopup(`
         <div class="map-popup-card" data-id="${r.id}">
-          <p class="card-title">${Utils.escapeHTML(r.name)}</p>
-          ${subtitle ? `<p class="card-subtitle">${subtitle}</p>` : ''}
-          ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
+          <div class="card-thumb-placeholder map-popup-thumb">🍽️</div>
+          <div class="card-title-block">
+            <p class="card-title">${Utils.escapeHTML(r.name)}</p>
+            ${subtitle ? `<p class="card-subtitle">${subtitle}</p>` : ''}
+            ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
+          </div>
         </div>
-      `, { maxWidth: 220 });
+      `, { maxWidth: 240 });
       markers.push(marker);
     });
   }

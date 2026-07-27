@@ -209,7 +209,9 @@ input, select { font-family: inherit; }
 }
 .find-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
 
-.map-popup-card { cursor: pointer; min-width: 140px; }
+.map-popup-card { cursor: pointer; min-width: 180px; display: flex; gap: 10px; align-items: flex-start; }
+.map-popup-thumb { width: 44px; height: 44px; border-radius: var(--radius-sm); flex-shrink: 0; font-size: 18px; }
+.map-popup-card .card-title-block { min-width: 0; }
 .map-popup-card .card-title { font-size: 15px; font-weight: 800; margin: 0 0 4px; }
 .map-popup-card .card-subtitle { font-size: 12px; color: var(--text-secondary); margin: 0 0 4px; }
 .map-popup-card .card-note { font-size: 12px; color: var(--text-secondary); margin: 0; }
