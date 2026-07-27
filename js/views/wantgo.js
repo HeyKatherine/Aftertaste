@@ -103,13 +103,29 @@ const WantGo = (() => {
         </div>
         <div class="card-actions">
           <button class="btn btn-primary btn-approve">认可 ✅</button>
+          <button class="btn btn-ghost btn-edit">编辑</button>
           <button class="btn btn-ghost btn-drop">拔草 ❌</button>
         </div>
       </div>
     `);
     card.querySelector('.btn-approve').onclick = () => openApproveSheet(shop);
+    card.querySelector('.btn-edit').onclick = () => openEditShopSheet(shop);
     card.querySelector('.btn-drop').onclick = () => dropShop(shop);
     return card;
+  }
+
+  // ---------- 编辑想去里的店（补充地址/链接等资料，不改变「未认可」状态） ----------
+  function openEditShopSheet(shop) {
+    RestaurantForm.open({
+      initial: shop,
+      title: '编辑店铺信息',
+      submitLabel: '保存',
+      onSubmit: async (patch) => {
+        await DB.Restaurants.update(shop.id, patch);
+        UI.toast('已保存');
+        App.notifyDataChanged();
+      },
+    });
   }
 
   // 组内任意一家分店已经上传过照片的话，折叠卡片就用那张当封面，没有照片才退回品牌图标
