@@ -58,6 +58,43 @@ const UI = (() => {
     });
   }
 
+  // ---------- Photo Viewer ----------
+  const photoViewerRoot = () => document.getElementById('photo-viewer-root');
+
+  function openPhotoViewer(urls, startIndex = 0) {
+    closePhotoViewer();
+    let idx = startIndex;
+    const multi = urls.length > 1;
+    const backdrop = el(`
+      <div class="photo-viewer-backdrop">
+        <button type="button" class="photo-viewer-close">✕</button>
+        ${multi ? '<button type="button" class="photo-viewer-nav photo-viewer-prev">‹</button>' : ''}
+        ${multi ? '<button type="button" class="photo-viewer-nav photo-viewer-next">›</button>' : ''}
+        <img>
+        ${multi ? '<p class="photo-viewer-counter"></p>' : ''}
+      </div>
+    `);
+    const imgEl = backdrop.querySelector('img');
+    const counterEl = backdrop.querySelector('.photo-viewer-counter');
+    function render() {
+      imgEl.src = urls[idx];
+      if (counterEl) counterEl.textContent = `${idx + 1} / ${urls.length}`;
+    }
+    render();
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closePhotoViewer();
+    });
+    backdrop.querySelector('.photo-viewer-close').onclick = closePhotoViewer;
+    const prevBtn = backdrop.querySelector('.photo-viewer-prev');
+    const nextBtn = backdrop.querySelector('.photo-viewer-next');
+    if (prevBtn) prevBtn.onclick = () => { idx = (idx - 1 + urls.length) % urls.length; render(); };
+    if (nextBtn) nextBtn.onclick = () => { idx = (idx + 1) % urls.length; render(); };
+    photoViewerRoot().appendChild(backdrop);
+  }
+  function closePhotoViewer() {
+    photoViewerRoot().innerHTML = '';
+  }
+
   // ---------- Photo Picker ----------
   function createPhotoPicker(initialIds = []) {
     let ids = [...initialIds];
@@ -148,6 +185,7 @@ const UI = (() => {
 
   return {
     toast, el, openSheet, closeSheet, openModal, closeModal, confirmDialog,
+    openPhotoViewer, closePhotoViewer,
     createPhotoPicker, createLinkList, renderLinkIcon,
   };
 })();

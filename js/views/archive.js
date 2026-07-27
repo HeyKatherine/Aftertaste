@@ -127,12 +127,14 @@ const Archive = (() => {
     if (!r) return;
 
     let photosHTML = '';
+    let photoUrls = [];
     if (r.photos && r.photos.length) {
-      const imgs = await Promise.all(r.photos.map(async (pid) => {
+      const blobUrls = await Promise.all(r.photos.map(async (pid) => {
         const p = await DB.Photos.get(pid);
-        return p ? `<img src="${URL.createObjectURL(p.blob)}">` : '';
+        return p ? URL.createObjectURL(p.blob) : null;
       }));
-      photosHTML = `<div class="detail-photos">${imgs.join('')}</div>`;
+      photoUrls = blobUrls.filter(Boolean);
+      photosHTML = `<div class="detail-photos">${photoUrls.map((url, i) => `<img class="detail-photo" data-idx="${i}" src="${url}">`).join('')}</div>`;
     }
 
     const wishes = await DB.Wishes.all();
@@ -212,6 +214,9 @@ const Archive = (() => {
       </div>
     `);
     sheet.querySelector('.sheet-close').onclick = UI.closeSheet;
+    sheet.querySelectorAll('.detail-photo').forEach((img) => {
+      img.onclick = () => UI.openPhotoViewer(photoUrls, Number(img.dataset.idx));
+    });
     const siblingRow = sheet.querySelector('#sibling-branches');
     if (siblingRow) {
       siblingRow.querySelectorAll('[data-id]').forEach((el) => {

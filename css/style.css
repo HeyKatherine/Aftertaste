@@ -266,6 +266,21 @@ input, select { font-family: inherit; }
 .sheet-header h2 { font-size: 19px; font-weight: 800; }
 .sheet-close { background: var(--card-bg); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; color: var(--text-secondary); cursor: pointer; }
 
+.photo-viewer-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 2200;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+}
+.photo-viewer-backdrop img { width: 92vw; height: 78vh; object-fit: contain; border-radius: var(--radius-md); }
+.photo-viewer-close, .photo-viewer-nav {
+  position: absolute; border: none; background: rgba(255, 255, 255, 0.15); color: #fff;
+  border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.photo-viewer-close { top: 16px; right: 16px; width: 36px; height: 36px; font-size: 16px; }
+.photo-viewer-nav { top: 50%; transform: translateY(-50%); width: 44px; height: 44px; font-size: 22px; }
+.photo-viewer-prev { left: 12px; }
+.photo-viewer-next { right: 12px; }
+.photo-viewer-counter { color: rgba(255, 255, 255, 0.8); font-size: 13px; margin-top: 14px; }
+
 .form-field { margin-bottom: 14px; }
 .form-field label { display: block; font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
 .form-field input[type="text"], .form-field input[type="number"], .form-field textarea, .form-field select {
@@ -312,7 +327,7 @@ input, select { font-family: inherit; }
 
 /* ============ 详情页 ============ */
 .detail-photos { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px; }
-.detail-photos img { width: 120px; height: 120px; border-radius: var(--radius-md); object-fit: cover; flex-shrink: 0; }
+.detail-photos img { width: 120px; height: 120px; border-radius: var(--radius-md); object-fit: cover; flex-shrink: 0; cursor: pointer; }
 .detail-field { margin-bottom: 14px; }
 .detail-field label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
 .detail-field .value { font-size: 15px; }
