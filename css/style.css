@@ -145,7 +145,7 @@ input, select { font-family: inherit; }
   display: flex; flex-direction: column; gap: 10px;
   margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
 }
-.shop-group-branches .shop-card { box-shadow: none; background: var(--bg); }
+.shop-group-branches .shop-card, .shop-group-branches .archive-card { box-shadow: none; background: var(--bg); }
 .card-top-row { display: flex; align-items: center; gap: 10px; }
 .card-thumb {
   width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover;

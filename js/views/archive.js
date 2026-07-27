@@ -23,18 +23,65 @@ const Archive = (() => {
       filterState = getState();
     }
 
-    const filtered = Filters.apply(approved, filterState)
-      .sort((a, b) => (b.lastVisitAt || b.addedAt || '').localeCompare(a.lastVisitAt || a.addedAt || ''));
+    const filtered = Filters.apply(approved, filterState);
 
     const listEl = document.getElementById('archive-list');
     const emptyEl = document.getElementById('archive-empty');
     listEl.innerHTML = '';
     emptyEl.classList.toggle('hidden', approved.length > 0);
 
+    // 同品牌的多家分店合并成一张可展开卡片，跟"想去"tab 的分组逻辑一致
+    const sortKeyOf = (r) => r.lastVisitAt || r.addedAt || '';
+    const groups = new Map();
+    const singles = [];
     for (const r of filtered) {
-      const card = await buildCard(r);
-      listEl.appendChild(card);
+      if (r.brand) {
+        if (!groups.has(r.brand)) groups.set(r.brand, []);
+        groups.get(r.brand).push(r);
+      } else {
+        singles.push(r);
+      }
     }
+
+    const items = [];
+    for (const r of singles) {
+      items.push({ sortKey: sortKeyOf(r), el: await buildCard(r) });
+    }
+    for (const [brand, branchList] of groups) {
+      if (branchList.length === 1) {
+        items.push({ sortKey: sortKeyOf(branchList[0]), el: await buildCard(branchList[0]) });
+      } else {
+        const latestKey = branchList.reduce((max, r) => (sortKeyOf(r) > max ? sortKeyOf(r) : max), '');
+        items.push({ sortKey: latestKey, el: await buildGroupCard(brand, branchList) });
+      }
+    }
+    items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+    items.forEach((item) => listEl.appendChild(item.el));
+  }
+
+  async function buildGroupCard(brand, branchList) {
+    const group = UI.el(`
+      <details class="archive-card shop-group">
+        <summary class="card-top-row">
+          <div class="card-thumb-placeholder">🏷️</div>
+          <div class="card-title-block">
+            <p class="card-title">${Utils.escapeHTML(brand)}</p>
+            <p class="card-subtitle">${branchList.length} 家分店 · 点开选择</p>
+          </div>
+        </summary>
+        <div class="shop-group-branches"></div>
+      </details>
+    `);
+    const branchContainer = group.querySelector('.shop-group-branches');
+    const sorted = [...branchList].sort((a, b) => {
+      const ak = a.lastVisitAt || a.addedAt || '';
+      const bk = b.lastVisitAt || b.addedAt || '';
+      return bk.localeCompare(ak);
+    });
+    for (const r of sorted) {
+      branchContainer.appendChild(await buildCard(r));
+    }
+    return group;
   }
 
   async function buildCard(r) {
