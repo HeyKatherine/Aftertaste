@@ -86,6 +86,25 @@ const Archive = (() => {
       ? `<div class="external-links">${r.links.map((l) => UI.renderLinkIcon(l)).join('')}</div>`
       : '';
 
+    let navHTML = '';
+    if (r.location) {
+      const { lat, lng } = r.location;
+      const name = encodeURIComponent(r.name);
+      const appleUrl = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+      const amapUrl = `https://uri.amap.com/navigation?to=${lng},${lat},${name}&mode=car&policy=1&coordinate=wgs84&callnative=1`;
+      const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+      navHTML = `
+        <div class="detail-field">
+          <label>导航</label>
+          <div class="external-links">
+            <a class="external-link-btn" href="${appleUrl}" target="_blank" rel="noopener">🍎 苹果地图</a>
+            <a class="external-link-btn" href="${amapUrl}" target="_blank" rel="noopener">🧭 高德地图</a>
+            <a class="external-link-btn" href="${googleUrl}" target="_blank" rel="noopener">🌍 Google 地图</a>
+          </div>
+        </div>
+      `;
+    }
+
     let siblingsHTML = '';
     let brandActionsHTML = '';
     if (r.brand) {
@@ -121,6 +140,7 @@ const Archive = (() => {
       <div class="detail-field"><label>备注</label><div class="value">${Utils.escapeHTML(r.notes || '—')}</div></div>
       <div class="detail-field"><label>城市/地区</label><div class="value">${Utils.escapeHTML(r.region || '—')}</div></div>
       <div class="detail-field"><label>去过次数</label><div class="value">${r.visitCount || 0} 次${r.lastVisitAt ? ' · 最近 ' + r.lastVisitAt : ''}</div></div>
+      ${navHTML}
       ${linksHTML}
       ${siblingsHTML}
       ${brandActionsHTML}
