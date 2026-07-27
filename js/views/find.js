@@ -110,8 +110,9 @@ const Find = (() => {
         const photo = await DB.Photos.get(r.photos[0]);
         const thumb = card.querySelector('.map-popup-thumb');
         if (photo && thumb) {
+          // 不能调用 e.popup.update()：它会用绑定时的原始 HTML 字符串重置 innerHTML，
+          // 把刚插入的 <img> 又冲掉、打回占位图标。直接改 DOM 就够了，不需要 Leaflet 重新布局。
           thumb.outerHTML = `<img class="card-thumb map-popup-thumb" src="${URL.createObjectURL(photo.blob)}">`;
-          e.popup.update();
         }
       }
     });
