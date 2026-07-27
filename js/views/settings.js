@@ -36,6 +36,16 @@ const Settings = (() => {
   }
 
   async function clearCacheAndReload() {
+    // 先探一下网络是不是真的通（navigator.onLine 只说明有信号，WiFi 连着但不通网时它仍然是 true）。
+    // 清完缓存却因为网络问题刷新失败，会导致白屏且没有离线壳可退回，所以要在破坏性操作之前确认。
+    UI.toast('正在检查网络…');
+    try {
+      const res = await fetch('index.html', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error('bad status');
+    } catch (e) {
+      UI.toast('网络不太稳定，请确认能正常上网后再试（避免清完缓存却刷新失败变白屏）');
+      return;
+    }
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
       for (const reg of regs) await reg.unregister();
