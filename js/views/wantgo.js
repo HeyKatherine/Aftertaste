@@ -121,10 +121,16 @@ const WantGo = (() => {
             <p class="card-title">${Utils.escapeHTML(brand)}</p>
             <p class="card-subtitle">${branchShops.length} 家分店 · 点开选择</p>
           </div>
+          <button type="button" class="btn btn-primary btn-small btn-approve-all">认可全部</button>
         </summary>
         <div class="shop-group-branches"></div>
       </details>
     `);
+    group.querySelector('.btn-approve-all').onclick = (e) => {
+      e.preventDefault(); // 避免顺带触发 <details> 展开/收起
+      e.stopPropagation();
+      openApproveBrandSheet(brand, branchShops);
+    };
     const branchContainer = group.querySelector('.shop-group-branches');
     branchShops
       .sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''))
@@ -175,6 +181,102 @@ const WantGo = (() => {
         row.remove();
         App.notifyDataChanged();
       };
+    });
+  }
+
+  // ---------- 连锁店批量认可：评级/菜系/场景/人均/标签/备注应用到该品牌下所有分店，
+  // 每家分店各自的店名/坐标/链接不受影响 ----------
+  function openApproveBrandSheet(brand, branchShops) {
+    const sheet = UI.openSheet(`
+      <div class="sheet-header"><h2>认可「${Utils.escapeHTML(brand)}」全部 ${branchShops.length} 家</h2><button class="sheet-close">✕</button></div>
+      <p class="form-hint" style="margin-bottom:14px;">下面填的评级/菜系/场景/备注会应用到这 ${branchShops.length} 家分店；每家分店各自的地址、链接不受影响，之后仍可单独编辑</p>
+      <form id="approve-brand-form">
+        <div class="form-field">
+          <label>评级</label>
+          <div class="chip-select-row" id="ab-rating">
+            ${Constants.RATINGS.map((r) => `<span class="chip-select" data-value="${r}">${r}</span>`).join('')}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>菜系</label>
+          <div class="chip-select-row" id="ab-cuisine">
+            ${Constants.CUISINES.map((c) => `<span class="chip-select" data-value="${c}">${c}</span>`).join('')}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>场景</label>
+          <div class="chip-select-row" id="ab-scene">
+            ${Constants.SCENES.map((s) => `<span class="chip-select" data-value="${s}">${s}</span>`).join('')}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>人均</label>
+          <input type="number" id="ab-price" placeholder="元" min="0">
+        </div>
+        <div class="form-field">
+          <label>标签（逗号分隔）</label>
+          <input type="text" id="ab-tags" placeholder="深夜营业, 周末排队久">
+        </div>
+        <div class="form-field">
+          <label>备注</label>
+          <textarea id="ab-notes" placeholder="全系列都不错"></textarea>
+        </div>
+        <div class="modal-actions" style="margin-top:10px;">
+          <button type="button" class="btn btn-ghost" id="ab-cancel">取消</button>
+          <button type="submit" class="btn btn-primary">认可全部 ${branchShops.length} 家</button>
+        </div>
+      </form>
+    `);
+    sheet.querySelector('.sheet-close').onclick = UI.closeSheet;
+    sheet.querySelector('#ab-cancel').onclick = UI.closeSheet;
+
+    let selectedRating = '';
+    let selectedCuisine = '';
+    const selectedScenes = new Set();
+    const ratingRow = sheet.querySelector('#ab-rating');
+    ratingRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      ratingRow.querySelectorAll('.chip-select').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedRating = chip.dataset.value;
+    });
+    const cuisineRow = sheet.querySelector('#ab-cuisine');
+    cuisineRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      const wasActive = chip.classList.contains('active');
+      cuisineRow.querySelectorAll('.chip-select').forEach((c) => c.classList.remove('active'));
+      selectedCuisine = wasActive ? '' : chip.dataset.value;
+      if (!wasActive) chip.classList.add('active');
+    });
+    const sceneRow = sheet.querySelector('#ab-scene');
+    sceneRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      chip.classList.toggle('active');
+      if (chip.classList.contains('active')) selectedScenes.add(chip.dataset.value);
+      else selectedScenes.delete(chip.dataset.value);
+    });
+
+    sheet.querySelector('#approve-brand-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const tags = sheet.querySelector('#ab-tags').value.split(',').map((t) => t.trim()).filter(Boolean);
+      const patch = {
+        status: 'approved',
+        myRating: selectedRating,
+        cuisine: selectedCuisine,
+        scene: [...selectedScenes],
+        pricePerPerson: sheet.querySelector('#ab-price').value ? Number(sheet.querySelector('#ab-price').value) : null,
+        tags,
+        notes: sheet.querySelector('#ab-notes').value.trim(),
+      };
+      for (const shop of branchShops) {
+        await DB.Restaurants.approve(shop.id, patch);
+      }
+      UI.closeSheet();
+      UI.toast(`已认可 ${branchShops.length} 家 ✅`);
+      App.notifyDataChanged();
     });
   }
 

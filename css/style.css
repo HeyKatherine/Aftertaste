@@ -132,11 +132,12 @@ input, select { font-family: inherit; }
 .shop-card.decayed, .wish-card.decayed { opacity: 0.5; }
 
 .shop-group > summary {
-  cursor: pointer; list-style: none; position: relative;
+  cursor: pointer; list-style: none; position: relative; padding-right: 18px;
 }
 .shop-group > summary::-webkit-details-marker { display: none; }
+.shop-group > summary .btn-approve-all { flex-shrink: 0; }
 .shop-group > summary::after {
-  content: '▾'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  content: '▾'; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
   color: var(--text-faint); font-size: 14px; transition: transform 0.15s ease;
 }
 .shop-group[open] > summary::after { transform: translateY(-50%) rotate(180deg); }
