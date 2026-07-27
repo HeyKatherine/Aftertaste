@@ -76,11 +76,11 @@ const WantGo = (() => {
 
     const items = []; // { sortKey, el }
     for (const shop of singles) {
-      items.push({ sortKey: shop.addedAt || '', el: buildShopCard(shop, decayDays) });
+      items.push({ sortKey: shop.addedAt || '', el: await buildShopCard(shop, decayDays) });
     }
     for (const [brand, branchShops] of groups) {
       if (branchShops.length === 1) {
-        items.push({ sortKey: branchShops[0].addedAt || '', el: buildShopCard(branchShops[0], decayDays) });
+        items.push({ sortKey: branchShops[0].addedAt || '', el: await buildShopCard(branchShops[0], decayDays) });
       } else {
         const latestAdded = branchShops.reduce((max, s) => (s.addedAt || '') > max ? (s.addedAt || '') : max, '');
         items.push({ sortKey: latestAdded, el: await buildShopGroupCard(brand, branchShops, decayDays) });
@@ -90,17 +90,29 @@ const WantGo = (() => {
     items.forEach((item) => listEl.appendChild(item.el));
   }
 
-  function buildShopCard(shop, decayDays) {
+  async function buildShopCard(shop, decayDays) {
     const isDecayed = Utils.daysSince(shop.addedAt) > decayDays;
+    let thumbHTML = '<div class="card-thumb-placeholder">🔖</div>';
+    if (shop.photos && shop.photos.length) {
+      const photo = await DB.Photos.get(shop.photos[0]);
+      if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
+    }
+    // 有菜系/品牌/地区就优先显示这些（跟认可档案卡片对齐），都没填就退回链接图标或存入日期
+    const infoParts = [shop.brand ? '🏷️ ' + shop.brand : null, shop.cuisine, shop.region].filter(Boolean);
+    const subtitle = infoParts.length
+      ? infoParts.map(Utils.escapeHTML).join(' · ')
+      : (shop.links && shop.links.length ? shop.links.map((l) => Utils.detectLinkSource(l.url).icon).join(' ') : '存入 ' + shop.addedAt);
     const card = UI.el(`
       <div class="shop-card ${isDecayed ? 'decayed' : ''}">
         <div class="card-top-row">
-          <div class="card-thumb-placeholder">🔖</div>
+          ${thumbHTML}
           <div class="card-title-block">
             <p class="card-title">${Utils.escapeHTML(shop.name)}</p>
-            <p class="card-subtitle">${shop.links && shop.links.length ? shop.links.map((l) => Utils.detectLinkSource(l.url).icon).join(' ') : '存入 ' + shop.addedAt}</p>
+            <p class="card-subtitle">${subtitle}</p>
           </div>
+          ${shop.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (shop.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(shop.myRating)}</span>` : '')}
         </div>
+        ${shop.notes ? `<p class="card-note">${Utils.escapeHTML(shop.notes)}</p>` : ''}
         <div class="card-actions">
           <button class="btn btn-primary btn-approve">认可 ✅</button>
           <button class="btn btn-ghost btn-edit">编辑</button>
@@ -160,9 +172,10 @@ const WantGo = (() => {
       openApproveBrandSheet(brand, branchShops);
     };
     const branchContainer = group.querySelector('.shop-group-branches');
-    branchShops
-      .sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''))
-      .forEach((shop) => branchContainer.appendChild(buildShopCard(shop, decayDays)));
+    const sortedBranches = branchShops.sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''));
+    for (const shop of sortedBranches) {
+      branchContainer.appendChild(await buildShopCard(shop, decayDays));
+    }
     return group;
   }
 
