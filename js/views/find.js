@@ -151,11 +151,12 @@ const Find = (() => {
 
   async function getPool() {
     const all = await DB.Restaurants.all();
-    const approved = all.filter((r) => r.status === 'approved');
+    // 认可的店和想去的店都要能在地图/列表上找到；想去的店视觉上单独区分，不代表已经去过
+    const relevant = all.filter((r) => r.status === 'approved' || r.status === 'wishlist');
 
     const panel = document.getElementById('find-filter-panel');
     if (!filterPanelBuilt) {
-      const { getState } = Filters.createPanel(panel, approved, (state) => {
+      const { getState } = Filters.createPanel(panel, relevant, (state) => {
         filterState = state;
         refresh();
       });
@@ -163,7 +164,7 @@ const Find = (() => {
       filterState = getState();
     }
 
-    let pool = Filters.apply(approved, filterState);
+    let pool = Filters.apply(relevant, filterState);
     pool = pool.map((r) => ({
       ...r,
       _distance: currentLocation && r.location
@@ -194,17 +195,18 @@ const Find = (() => {
   function renderPins(restaurants) {
     clearPins();
     restaurants.forEach((r) => {
-      const color = RATING_COLOR[r.myRating] || '#C9BBB4';
+      const isWishlist = r.status === 'wishlist';
+      const color = isWishlist ? '#D9A441' : (RATING_COLOR[r.myRating] || '#C9BBB4');
       const marker = L.circleMarker([r.location.lat, r.location.lng], {
-        radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.95,
+        radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: isWishlist ? 0.75 : 0.95,
         bubblingMouseEvents: false, // 点图钉不应该同时把这里设成新的参考位置
       }).addTo(map);
-      const subtitle = [r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
+      const subtitle = [isWishlist ? '🔖 想去' : r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
         .filter(Boolean).map(Utils.escapeHTML).join(' · ');
       // 图片是异步取的，弹窗先用占位图标同步开出来，等 popupopen 时再补上真实照片
       marker.bindPopup(`
         <div class="map-popup-card" data-id="${r.id}">
-          <div class="card-thumb-placeholder map-popup-thumb">🍽️</div>
+          <div class="card-thumb-placeholder map-popup-thumb">${isWishlist ? '🔖' : '🍽️'}</div>
           <div class="card-title-block">
             <p class="card-title">${Utils.escapeHTML(r.name)}</p>
             ${subtitle ? `<p class="card-subtitle">${subtitle}</p>` : ''}
@@ -220,11 +222,12 @@ const Find = (() => {
     const listEl = document.getElementById('find-list');
     listEl.innerHTML = '';
     if (!restaurants.length) {
-      listEl.innerHTML = '<div class="empty-state"><p>这个范围内还没有认可的店</p><p class="empty-sub">试试放宽筛选或范围</p></div>';
+      listEl.innerHTML = '<div class="empty-state"><p>这个范围内还没有认可或想去的店</p><p class="empty-sub">试试放宽筛选或范围</p></div>';
       return;
     }
     for (const r of restaurants) {
-      let thumbHTML = '<div class="card-thumb-placeholder">🍽️</div>';
+      const isWishlist = r.status === 'wishlist';
+      let thumbHTML = `<div class="card-thumb-placeholder">${isWishlist ? '🔖' : '🍽️'}</div>`;
       if (r.photos && r.photos.length) {
         const photo = await DB.Photos.get(r.photos[0]);
         if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
@@ -237,7 +240,7 @@ const Find = (() => {
               <p class="card-title">${Utils.escapeHTML(r.name)}</p>
               <p class="card-subtitle">${[r.cuisine, r._distance != null ? Utils.formatDistance(r._distance) : null].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
             </div>
-            ${r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : '')}
+            ${isWishlist ? '<span class="tag">🔖 想去</span>' : (r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : ''))}
           </div>
           ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
         </div>

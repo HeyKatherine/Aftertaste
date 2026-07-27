@@ -186,11 +186,13 @@ const Archive = (() => {
       `;
     }
 
+    const isWishlist = r.status === 'wishlist';
     const sheet = UI.openSheet(`
       <div class="sheet-header"><h2>${Utils.escapeHTML(r.name)}</h2><button class="sheet-close">✕</button></div>
       ${photosHTML}
       ${wishHint}
       <div class="tag-row" style="margin-bottom:14px;">
+        ${isWishlist ? '<span class="tag">🔖 想去</span>' : ''}
         ${r.myRating ? `<span class="tag ${r.myRating === '必回访' ? 'tag-must' : 'tag-rating'}">${Utils.escapeHTML(r.myRating)}</span>` : ''}
         ${r.brand ? `<span class="tag">🏷️ ${Utils.escapeHTML(r.brand)}</span>` : ''}
         ${(r.tags || []).map((t) => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
@@ -200,13 +202,15 @@ const Archive = (() => {
       <div class="detail-field"><label>人均</label><div class="value">${r.pricePerPerson != null ? '¥' + r.pricePerPerson : '—'}</div></div>
       <div class="detail-field"><label>备注</label><div class="value">${Utils.escapeHTML(r.notes || '—')}</div></div>
       <div class="detail-field"><label>城市/地区</label><div class="value">${Utils.escapeHTML(r.region || '—')}</div></div>
-      <div class="detail-field"><label>去过次数</label><div class="value">${r.visitCount || 0} 次${r.lastVisitAt ? ' · 最近 ' + r.lastVisitAt : ''}</div></div>
+      ${isWishlist ? '' : `<div class="detail-field"><label>去过次数</label><div class="value">${r.visitCount || 0} 次${r.lastVisitAt ? ' · 最近 ' + r.lastVisitAt : ''}</div></div>`}
       ${navHTML}
       ${linksHTML}
       ${siblingsHTML}
       ${brandActionsHTML}
       <div class="modal-actions" style="margin-top:16px;">
-        <button type="button" class="btn btn-accent btn-full" id="detail-visited" style="flex:1;">今天去了 🎉</button>
+        ${isWishlist
+          ? '<button type="button" class="btn btn-primary btn-full" id="detail-approve" style="flex:1;">认可 ✅</button>'
+          : '<button type="button" class="btn btn-accent btn-full" id="detail-visited" style="flex:1;">今天去了 🎉</button>'}
       </div>
       <div class="modal-actions" style="margin-top:10px;">
         <button type="button" class="btn btn-ghost" id="detail-edit">编辑</button>
@@ -225,12 +229,22 @@ const Archive = (() => {
     }
     const amapBtn = sheet.querySelector('#detail-amap-search');
     if (amapBtn) amapBtn.onclick = () => openAmapSearchSheet(r);
-    sheet.querySelector('#detail-visited').onclick = async () => {
-      await DB.Restaurants.markVisited(id);
-      UI.toast('已记录，回味满足 🎉');
-      UI.closeSheet();
-      App.notifyDataChanged();
-    };
+    const visitedBtn = sheet.querySelector('#detail-visited');
+    if (visitedBtn) {
+      visitedBtn.onclick = async () => {
+        await DB.Restaurants.markVisited(id);
+        UI.toast('已记录，回味满足 🎉');
+        UI.closeSheet();
+        App.notifyDataChanged();
+      };
+    }
+    const approveBtn = sheet.querySelector('#detail-approve');
+    if (approveBtn) {
+      approveBtn.onclick = () => {
+        UI.closeSheet();
+        WantGo.openApproveSheet(r);
+      };
+    }
     sheet.querySelector('#detail-edit').onclick = () => {
       UI.closeSheet();
       RestaurantForm.open({
