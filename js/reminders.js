@@ -17,8 +17,31 @@ const Reminders = (() => {
   }
 
   async function computeAll() {
-    const [restaurants, wishes, muted] = await Promise.all([DB.Restaurants.all(), DB.Wishes.all(), getMuted()]);
+    const [restaurants, wishes, muted, lastBackupAt] = await Promise.all([
+      DB.Restaurants.all(), DB.Wishes.all(), getMuted(), DB.Meta.getValue('lastBackupAt', null),
+    ]);
     const items = [];
+
+    // 备份提醒排在最前面：别的提醒最多是错过一次尝鲜，数据丢了是不可逆的。
+    // 数据库还空着的时候不提醒，免得刚装上就被唠叨。
+    const recordCount = restaurants.length + wishes.length;
+    if (recordCount > 0) {
+      const key = 'backup:agg';
+      if (!muted.includes(key) && !sessionIgnored.has(key)) {
+        const daysSinceBackup = lastBackupAt == null
+          ? null
+          : Math.floor((Date.now() - lastBackupAt) / (1000 * 60 * 60 * 24));
+        if (daysSinceBackup == null || daysSinceBackup > Settings.current.backupDays) {
+          items.push({
+            key, type: 'backup',
+            text: daysSinceBackup == null
+              ? `${recordCount} 条记录只存在这台手机上，还没备份过，点这里导出`
+              : `已经 ${daysSinceBackup} 天没备份了，点这里导出完整备份`,
+            action: () => Settings.doExport(true),
+          });
+        }
+      }
+    }
 
     const approved = restaurants.filter((r) => r.status === 'approved');
     for (const r of approved) {
@@ -110,6 +133,7 @@ const Reminders = (() => {
       const r = await DB.Restaurants.get(id);
       return r ? `回味提醒 · ${r.name}` : '回味提醒 · 已删除的餐厅';
     }
+    if (type === 'backup') return '备份提醒';
     if (type === 'shopDecay') return '想去防腐提醒';
     if (type === 'wishDecay') return '心愿防腐提醒';
     if (type === 'missingLocation') return '缺坐标提醒';

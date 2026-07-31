@@ -4,6 +4,7 @@ const Settings = (() => {
     revisitDays: Constants.DEFAULT_REVISIT_DAYS,
     shopDecayDays: Constants.DEFAULT_SHOP_DECAY_DAYS,
     wishDecayDays: Constants.DEFAULT_WISH_DECAY_DAYS,
+    backupDays: Constants.DEFAULT_BACKUP_DAYS,
   };
 
   async function load() {
@@ -12,6 +13,7 @@ const Settings = (() => {
     document.getElementById('setting-revisit-days').value = current.revisitDays;
     document.getElementById('setting-shop-decay-days').value = current.shopDecayDays;
     document.getElementById('setting-wish-decay-days').value = current.wishDecayDays;
+    document.getElementById('setting-backup-days').value = current.backupDays;
     await loadAmapConfig();
   }
 
@@ -70,6 +72,7 @@ const Settings = (() => {
     current.revisitDays = Number(document.getElementById('setting-revisit-days').value) || Constants.DEFAULT_REVISIT_DAYS;
     current.shopDecayDays = Number(document.getElementById('setting-shop-decay-days').value) || Constants.DEFAULT_SHOP_DECAY_DAYS;
     current.wishDecayDays = Number(document.getElementById('setting-wish-decay-days').value) || Constants.DEFAULT_WISH_DECAY_DAYS;
+    current.backupDays = Number(document.getElementById('setting-backup-days').value) || Constants.DEFAULT_BACKUP_DAYS;
     await DB.Meta.setValue('reminderSettings', { ...current });
     UI.toast('设置已保存');
     App.notifyDataChanged();
@@ -94,7 +97,9 @@ const Settings = (() => {
     downloadJSON(data, includePhotos ? `餐厅档案-完整备份-${stamp}.json` : `餐厅档案-文字备份-${stamp}.json`);
     await DB.Meta.setValue('lastBackupAt', Date.now());
     UI.toast('导出完成');
-    renderStats();
+    // 走 notifyDataChanged 而不是直接 renderStats：从提醒栏触发备份时当前在找店页，
+    // 需要重新渲染提醒把「该备份了」那条消掉；在设置页时它同样会刷新统计。
+    App.notifyDataChanged();
   }
 
   function handleImportFile(e) {
@@ -181,7 +186,7 @@ const Settings = (() => {
     } else {
       const days = Math.floor((Date.now() - lastBackupAt) / (1000 * 60 * 60 * 24));
       backupEl.textContent = `${days} 天前`;
-      backupRow.classList.toggle('warn', days > 14);
+      backupRow.classList.toggle('warn', days > current.backupDays);
     }
 
     await renderDismissedList();
@@ -209,5 +214,5 @@ const Settings = (() => {
     });
   }
 
-  return { current, load, init, renderStats };
+  return { current, load, init, renderStats, doExport };
 })();
