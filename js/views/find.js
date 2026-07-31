@@ -179,7 +179,6 @@ const Find = (() => {
 
   async function refresh() {
     ensureMap();
-    await Reminders.render(document.getElementById('reminder-stack'));
     const pool = await getPool();
     renderPins(pool.filter((r) => r.location));
     await renderList(pool.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));

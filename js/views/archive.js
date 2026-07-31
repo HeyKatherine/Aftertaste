@@ -2,10 +2,15 @@
 const Archive = (() => {
   let filterState = {};
   let filterPanelBuilt = false;
+  let searchQuery = '';
 
   function init() {
     document.getElementById('btn-archive-filter').addEventListener('click', () => {
       document.getElementById('archive-filter-panel').classList.toggle('hidden');
+    });
+    document.getElementById('archive-search').addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim().toLowerCase();
+      renderList();
     });
   }
 
@@ -23,38 +28,53 @@ const Archive = (() => {
       filterState = getState();
     }
 
-    const filtered = Filters.apply(approved, filterState);
+    let filtered = Filters.apply(approved, filterState);
+    if (searchQuery) {
+      filtered = filtered.filter((r) =>
+        r.name.toLowerCase().includes(searchQuery) || (r.brand || '').toLowerCase().includes(searchQuery));
+    }
 
     const listEl = document.getElementById('archive-list');
     const emptyEl = document.getElementById('archive-empty');
+    const noMatchEl = document.getElementById('archive-no-match');
     listEl.innerHTML = '';
+    // 库里一家都没有 → 引导去认可；有但都被搜索/筛选挡掉了 → 提示放宽条件
     emptyEl.classList.toggle('hidden', approved.length > 0);
+    noMatchEl.classList.toggle('hidden', approved.length === 0 || filtered.length > 0);
 
-    // 同品牌的多家分店合并成一张可展开卡片，跟"想去"tab 的分组逻辑一致
     const sortKeyOf = (r) => r.lastVisitAt || r.addedAt || '';
-    const groups = new Map();
-    const singles = [];
-    for (const r of filtered) {
-      if (r.brand) {
-        if (!groups.has(r.brand)) groups.set(r.brand, []);
-        groups.get(r.brand).push(r);
-      } else {
-        singles.push(r);
+    const items = [];
+
+    if (searchQuery) {
+      // 搜索时不分组：匹配到的分店如果被折叠进品牌卡片里就等于没搜到
+      for (const r of filtered) {
+        items.push({ sortKey: sortKeyOf(r), el: await buildCard(r) });
+      }
+    } else {
+      // 同品牌的多家分店合并成一张可展开卡片，跟"想去"tab 的分组逻辑一致
+      const groups = new Map();
+      const singles = [];
+      for (const r of filtered) {
+        if (r.brand) {
+          if (!groups.has(r.brand)) groups.set(r.brand, []);
+          groups.get(r.brand).push(r);
+        } else {
+          singles.push(r);
+        }
+      }
+      for (const r of singles) {
+        items.push({ sortKey: sortKeyOf(r), el: await buildCard(r) });
+      }
+      for (const [brand, branchList] of groups) {
+        if (branchList.length === 1) {
+          items.push({ sortKey: sortKeyOf(branchList[0]), el: await buildCard(branchList[0]) });
+        } else {
+          const latestKey = branchList.reduce((max, r) => (sortKeyOf(r) > max ? sortKeyOf(r) : max), '');
+          items.push({ sortKey: latestKey, el: await buildGroupCard(brand, branchList) });
+        }
       }
     }
 
-    const items = [];
-    for (const r of singles) {
-      items.push({ sortKey: sortKeyOf(r), el: await buildCard(r) });
-    }
-    for (const [brand, branchList] of groups) {
-      if (branchList.length === 1) {
-        items.push({ sortKey: sortKeyOf(branchList[0]), el: await buildCard(branchList[0]) });
-      } else {
-        const latestKey = branchList.reduce((max, r) => (sortKeyOf(r) > max ? sortKeyOf(r) : max), '');
-        items.push({ sortKey: latestKey, el: await buildGroupCard(brand, branchList) });
-      }
-    }
     items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
     items.forEach((item) => listEl.appendChild(item.el));
   }
@@ -105,19 +125,34 @@ const Archive = (() => {
         thumbHTML = `<img class="card-thumb" src="${url}">`;
       }
     }
+    const subtitleParts = [r.brand ? '🏷️ ' + r.brand : null, r.cuisine, r.region];
+    if (r.visitCount) subtitleParts.push(`去过 ${r.visitCount} 次`);
     const card = UI.el(`
       <div class="archive-card">
         <div class="card-top-row">
           ${thumbHTML}
           <div class="card-title-block">
             <p class="card-title">${Utils.escapeHTML(r.name)}</p>
-            <p class="card-subtitle">${[r.brand ? '🏷️ ' + r.brand : null, r.cuisine, r.region].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
+            <p class="card-subtitle">${subtitleParts.filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
           </div>
-          ${r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : '')}
+          <div class="card-side">
+            ${r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : '')}
+            <button type="button" class="btn-checkin">✓ 打卡</button>
+          </div>
         </div>
         ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
       </div>
     `);
+    card.querySelector('.btn-checkin').onclick = async (e) => {
+      e.stopPropagation(); // 卡片本身是点开详情的，打卡不该顺带把详情弹出来
+      if (r.lastVisitAt === Utils.todayISO()) {
+        UI.toast('今天已经记过一次了');
+        return;
+      }
+      await DB.Restaurants.markVisited(r.id);
+      UI.toast(`已记下今天去了${r.name} 🎉`);
+      App.notifyDataChanged();
+    };
     card.addEventListener('click', () => openDetail(r.id));
     return card;
   }

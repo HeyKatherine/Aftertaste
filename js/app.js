@@ -15,6 +15,8 @@ const App = (() => {
   }
 
   async function refreshView(view) {
+    // 提醒栏是全局的，四个 tab 都要能看到，所以放在这里统一渲染
+    await Reminders.render(document.getElementById('reminder-stack'));
     if (view === 'find') {
       await Find.refresh();
       Find.applyViewMode();

@@ -22,12 +22,13 @@
 <main id="app">
 
   <!-- ===================== 找店 tab ===================== -->
+  <!-- 提醒栏对所有 tab 共用一份，由 App.refreshView 统一渲染 -->
+  <div id="reminder-stack" class="reminder-stack"></div>
+
   <section id="view-find" class="view">
     <header class="page-header">
       <h1>找店</h1>
     </header>
-
-    <div id="reminder-stack" class="reminder-stack"></div>
 
     <div class="find-controls">
       <button id="btn-locate" class="btn btn-primary btn-locate">📍 获取我的位置</button>
@@ -108,11 +109,18 @@
       <h1>档案</h1>
       <button id="btn-archive-filter" class="btn btn-ghost btn-small">筛选 ▾</button>
     </header>
+    <div class="quick-add-row">
+      <input type="search" id="archive-search" placeholder="搜索店名或品牌" autocomplete="off">
+    </div>
     <div id="archive-filter-panel" class="filter-panel hidden"></div>
     <div id="archive-list" class="card-list"></div>
     <div id="archive-empty" class="empty-state hidden">
       <p>档案还是空的 ✅</p>
       <p class="empty-sub">去「想去」里认可几家店吧</p>
+    </div>
+    <div id="archive-no-match" class="empty-state hidden">
+      <p>没有匹配的店 🔍</p>
+      <p class="empty-sub">换个关键词，或看看筛选条件是不是太窄了</p>
     </div>
   </section>
 
