@@ -202,7 +202,11 @@ const Archive = (() => {
     if (r.location) {
       const { lat, lng } = r.location;
       const name = encodeURIComponent(r.name);
-      const baiduUrl = `https://api.map.baidu.com/direction?destination=${lat},${lng}&mode=driving&coord_type=wgs84&src=webapp`;
+      // 百度用 marker（地点标注）而不是 direction：direction 少了 output=html 会被打到
+      // baidu.com/error.html；就算补上 output=html，没有 origin/region 也只会跳到百度地图首页，
+      // 目的地整个丢掉。marker 会把坐标带过去（wgs84 由百度自己转成 bd09），
+      // autoOpen 直接弹出该点的信息卡，从那里可以点「到这去」。
+      const baiduUrl = `https://api.map.baidu.com/marker?location=${lat},${lng}&title=${name}&content=${name}&coord_type=wgs84&output=html&src=webapp.aftertaste.aftertaste`;
       const amapUrl = `https://uri.amap.com/navigation?to=${lng},${lat},${name}&mode=car&policy=1&coordinate=wgs84&callnative=1`;
       const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
       navHTML = `
