@@ -43,6 +43,7 @@ const App = (() => {
 
   async function boot() {
     await DB.open();
+    await DB.normalizeLegacyValues();
     await Settings.load();
     WantGo.init();
     Archive.init();

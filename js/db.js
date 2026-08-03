@@ -188,6 +188,25 @@ const DB = (() => {
     },
   };
 
+  // ---------- 历史数据归一化 ----------
+  // 分类名一旦改过，老记录里存的还是旧字符串（cuisine 是按值全等匹配的），
+  // 结果就是这些店在筛选器里再也选不中——旧分类的 chip 已经不存在了。
+  // 每次启动跑一遍，没有匹配就是零写入；这样导入很久以前的备份也能自动纠正。
+  const LEGACY_CUISINE_RENAMES = { '茶饮': '咖啡茶饮' };
+
+  async function normalizeLegacyValues() {
+    const all = await getAll('restaurants');
+    let changed = 0;
+    for (const r of all) {
+      const renamed = LEGACY_CUISINE_RENAMES[r.cuisine];
+      if (renamed) {
+        await put('restaurants', { ...r, cuisine: renamed });
+        changed++;
+      }
+    }
+    return changed;
+  }
+
   // ---------- 导出 / 导入 ----------
   async function exportData({ includePhotos }) {
     const [restaurants, wishes, metaAll] = await Promise.all([
@@ -254,5 +273,5 @@ const DB = (() => {
     };
   }
 
-  return { open, Restaurants, Wishes, Photos, Meta, exportData, importData };
+  return { open, Restaurants, Wishes, Photos, Meta, exportData, importData, normalizeLegacyValues };
 })();
