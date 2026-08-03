@@ -90,29 +90,45 @@ const Archive = (() => {
     return `<div class="card-thumb-placeholder">${fallbackEmoji}</div>`;
   }
 
+  // 连锁店的评级/菜系/备注这些是品牌级的，分店只负责各自的地址。批量导入时分店就继承好了，
+  // 但更早导入的老数据可能参差不齐，所以取第一家填了值的分店作为品牌级展示。
+  function sharedField(branchList, key, fallback = '') {
+    for (const r of branchList) {
+      const v = r[key];
+      if (Array.isArray(v)) { if (v.length) return v; }
+      else if (v !== null && v !== undefined && v !== '') return v;
+    }
+    return fallback;
+  }
+
+  function sortBranches(branchList) {
+    return [...branchList].sort((a, b) =>
+      (b.lastVisitAt || b.addedAt || '').localeCompare(a.lastVisitAt || a.addedAt || ''));
+  }
+
   async function buildGroupCard(brand, branchList) {
     const thumbHTML = await pickGroupThumbHTML(branchList, '🏷️');
+    const cuisine = sharedField(branchList, 'cuisine');
+    const rating = sharedField(branchList, 'myRating');
+    const notes = sharedField(branchList, 'notes');
+    const totalVisits = branchList.reduce((sum, r) => sum + (r.visitCount || 0), 0);
+    const subtitle = [cuisine, `${branchList.length} 家分店`, totalVisits ? `去过 ${totalVisits} 次` : null]
+      .filter(Boolean).map(Utils.escapeHTML).join(' · ');
+    // 整张卡片点开的是品牌信息，不再是展开一列分店：分店只是地址，信息是共用的
     const group = UI.el(`
-      <details class="archive-card shop-group">
-        <summary class="card-top-row">
+      <div class="archive-card">
+        <div class="card-top-row">
           ${thumbHTML}
           <div class="card-title-block">
-            <p class="card-title">${Utils.escapeHTML(brand)}</p>
-            <p class="card-subtitle">${branchList.length} 家分店 · 点开选择</p>
+            <p class="card-title">🏷️ ${Utils.escapeHTML(brand)}</p>
+            <p class="card-subtitle">${subtitle}</p>
           </div>
-        </summary>
-        <div class="shop-group-branches"></div>
-      </details>
+          ${rating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (rating ? `<span class="tag tag-rating">${Utils.escapeHTML(rating)}</span>` : '')}
+        </div>
+        ${notes ? `<p class="card-note">${Utils.escapeHTML(notes)}</p>` : ''}
+      </div>
     `);
-    const branchContainer = group.querySelector('.shop-group-branches');
-    const sorted = [...branchList].sort((a, b) => {
-      const ak = a.lastVisitAt || a.addedAt || '';
-      const bk = b.lastVisitAt || b.addedAt || '';
-      return bk.localeCompare(ak);
-    });
-    for (const r of sorted) {
-      branchContainer.appendChild(await buildCard(r));
-    }
+    group.addEventListener('click', () => openBrandDetail(brand, branchList));
     return group;
   }
 
@@ -306,6 +322,181 @@ const Archive = (() => {
       UI.toast('已删除');
       App.notifyDataChanged();
     };
+  }
+
+  // 品牌详情：连锁店当成一家店来看，分店退化成一串地址
+  async function openBrandDetail(brand, branchList) {
+    const cuisine = sharedField(branchList, 'cuisine');
+    const rating = sharedField(branchList, 'myRating');
+    const scene = sharedField(branchList, 'scene', []);
+    const price = sharedField(branchList, 'pricePerPerson', null);
+    const notes = sharedField(branchList, 'notes');
+    const tags = sharedField(branchList, 'tags', []);
+    const totalVisits = branchList.reduce((sum, r) => sum + (r.visitCount || 0), 0);
+    const lastVisit = branchList.map((r) => r.lastVisitAt).filter(Boolean).sort().pop();
+
+    // 封面/相册汇总所有分店的照片——照片拍的是这个牌子的菜，不是某个地址的
+    const photoUrls = [];
+    for (const r of branchList) {
+      for (const pid of (r.photos || [])) {
+        const p = await DB.Photos.get(pid);
+        if (p) photoUrls.push(URL.createObjectURL(p.blob));
+      }
+    }
+    const photosHTML = photoUrls.length
+      ? `<div class="detail-photos">${photoUrls.map((u, i) => `<img class="detail-photo" data-idx="${i}" src="${u}">`).join('')}</div>`
+      : '';
+
+    const branchRowsHTML = sortBranches(branchList).map((r) => `
+      <div class="link-row" data-branch-id="${r.id}" style="cursor:pointer; align-items:flex-start;">
+        <span style="flex:1;">
+          <b>${Utils.escapeHTML(r.name)}</b>${!r.location ? ' <span class="form-hint">⚠️ 没坐标</span>' : ''}<br>
+          <span class="form-hint">${[r.region, r.visitCount ? `去过 ${r.visitCount} 次` : null]
+            .filter(Boolean).map(Utils.escapeHTML).join(' · ') || '点开可以补地址、导航、打卡'}</span>
+        </span>
+      </div>
+    `).join('');
+
+    const sheet = UI.openSheet(`
+      <div class="sheet-header"><h2>🏷️ ${Utils.escapeHTML(brand)}</h2><button class="sheet-close">✕</button></div>
+      ${photosHTML}
+      <div class="tag-row" style="margin-bottom:14px;">
+        ${rating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (rating ? `<span class="tag tag-rating">${Utils.escapeHTML(rating)}</span>` : '')}
+        ${tags.map((t) => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
+      </div>
+      <div class="detail-field"><label>菜系</label><div class="value">${Utils.escapeHTML(cuisine || '—')}</div></div>
+      <div class="detail-field"><label>场景</label><div class="value">${scene.map(Utils.escapeHTML).join(' / ') || '—'}</div></div>
+      <div class="detail-field"><label>人均</label><div class="value">${price != null ? '¥' + price : '—'}</div></div>
+      <div class="detail-field"><label>备注</label><div class="value">${Utils.escapeHTML(notes || '—')}</div></div>
+      <div class="detail-field"><label>去过次数</label><div class="value">${totalVisits} 次（全部分店合计）${lastVisit ? ' · 最近 ' + Utils.escapeHTML(lastVisit) : ''}</div></div>
+      <div class="detail-field">
+        <label>分店（${branchList.length}）</label>
+        <div class="link-list" id="brand-branches">${branchRowsHTML}</div>
+      </div>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button type="button" class="btn btn-primary btn-full" id="brand-edit" style="flex:1;">编辑品牌信息（${branchList.length} 家同时改）</button>
+      </div>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button type="button" class="btn btn-danger btn-full" id="brand-delete" style="flex:1;">删除整个品牌（${branchList.length} 家）</button>
+      </div>
+    `);
+    sheet.querySelector('.sheet-close').onclick = UI.closeSheet;
+    sheet.querySelectorAll('.detail-photo').forEach((img) => {
+      img.onclick = () => UI.openPhotoViewer(photoUrls, Number(img.dataset.idx));
+    });
+    sheet.querySelectorAll('#brand-branches [data-branch-id]').forEach((row) => {
+      row.onclick = () => openDetail(row.dataset.branchId);
+    });
+    sheet.querySelector('#brand-edit').onclick = () => openEditBrandSheet(brand, branchList);
+    sheet.querySelector('#brand-delete').onclick = async () => {
+      const ok = await UI.confirmDialog({
+        title: '删除整个品牌',
+        message: `确定要删除「${brand}」旗下全部 ${branchList.length} 家分店吗？此操作不可恢复。`,
+        confirmText: `删除 ${branchList.length} 家`,
+        danger: true,
+      });
+      if (!ok) return;
+      for (const r of branchList) await DB.Restaurants.remove(r.id);
+      UI.closeSheet();
+      UI.toast(`已删除「${brand}」${branchList.length} 家分店`);
+      App.notifyDataChanged();
+    };
+  }
+
+  // 改一次，应用到该品牌所有分店；店名/地址/链接是每家自己的，不碰
+  function openEditBrandSheet(brand, branchList) {
+    let selectedRating = sharedField(branchList, 'myRating');
+    let selectedCuisine = sharedField(branchList, 'cuisine');
+    const selectedScenes = new Set(sharedField(branchList, 'scene', []));
+    const price = sharedField(branchList, 'pricePerPerson', null);
+    const tags = sharedField(branchList, 'tags', []);
+    const notes = sharedField(branchList, 'notes');
+
+    const sheet = UI.openSheet(`
+      <div class="sheet-header"><h2>编辑「${Utils.escapeHTML(brand)}」</h2><button class="sheet-close">✕</button></div>
+      <p class="form-hint" style="margin-bottom:14px;">这里改的内容会同时写入 ${branchList.length} 家分店；每家的店名和地址不受影响</p>
+      <form id="edit-brand-form">
+        <div class="form-field">
+          <label>评级</label>
+          <div class="chip-select-row" id="eb-rating">
+            ${Constants.RATINGS.map((r) => `<span class="chip-select${r === selectedRating ? ' active' : ''}" data-value="${r}">${r}</span>`).join('')}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>菜系</label>
+          <div class="chip-select-row" id="eb-cuisine">
+            ${Constants.CUISINES.map((c) => `<span class="chip-select${c === selectedCuisine ? ' active' : ''}" data-value="${c}">${c}</span>`).join('')}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>场景</label>
+          <div class="chip-select-row" id="eb-scene">
+            ${Constants.SCENES.map((s) => `<span class="chip-select${selectedScenes.has(s) ? ' active' : ''}" data-value="${s}">${s}</span>`).join('')}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>人均</label>
+          <input type="number" id="eb-price" placeholder="元" min="0" value="${price != null ? price : ''}">
+        </div>
+        <div class="form-field">
+          <label>标签（逗号分隔）</label>
+          <input type="text" id="eb-tags" placeholder="深夜营业, 周末排队久" value="${Utils.escapeHTML(tags.join(', '))}">
+        </div>
+        <div class="form-field">
+          <label>备注</label>
+          <textarea id="eb-notes" placeholder="全系列都不错">${Utils.escapeHTML(notes)}</textarea>
+        </div>
+        <div class="modal-actions" style="margin-top:10px;">
+          <button type="button" class="btn btn-ghost" id="eb-cancel">取消</button>
+          <button type="submit" class="btn btn-primary">保存到 ${branchList.length} 家</button>
+        </div>
+      </form>
+    `);
+    sheet.querySelector('.sheet-close').onclick = UI.closeSheet;
+    sheet.querySelector('#eb-cancel').onclick = UI.closeSheet;
+
+    const ratingRow = sheet.querySelector('#eb-rating');
+    ratingRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      const wasActive = chip.classList.contains('active');
+      ratingRow.querySelectorAll('.chip-select').forEach((c) => c.classList.remove('active'));
+      selectedRating = wasActive ? '' : chip.dataset.value;
+      if (!wasActive) chip.classList.add('active');
+    });
+    const cuisineRow = sheet.querySelector('#eb-cuisine');
+    cuisineRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      const wasActive = chip.classList.contains('active');
+      cuisineRow.querySelectorAll('.chip-select').forEach((c) => c.classList.remove('active'));
+      selectedCuisine = wasActive ? '' : chip.dataset.value;
+      if (!wasActive) chip.classList.add('active');
+    });
+    const sceneRow = sheet.querySelector('#eb-scene');
+    sceneRow.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip-select');
+      if (!chip) return;
+      chip.classList.toggle('active');
+      if (chip.classList.contains('active')) selectedScenes.add(chip.dataset.value);
+      else selectedScenes.delete(chip.dataset.value);
+    });
+
+    sheet.querySelector('#edit-brand-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const patch = {
+        myRating: selectedRating,
+        cuisine: selectedCuisine,
+        scene: [...selectedScenes],
+        pricePerPerson: sheet.querySelector('#eb-price').value ? Number(sheet.querySelector('#eb-price').value) : null,
+        tags: sheet.querySelector('#eb-tags').value.split(',').map((t) => t.trim()).filter(Boolean),
+        notes: sheet.querySelector('#eb-notes').value.trim(),
+      };
+      for (const r of branchList) await DB.Restaurants.update(r.id, patch);
+      UI.closeSheet();
+      UI.toast(`已更新「${brand}」${branchList.length} 家分店`);
+      App.notifyDataChanged();
+    });
   }
 
   async function openAmapSearchSheet(r) {
