@@ -172,10 +172,28 @@ const Utils = (() => {
     }[c]));
   }
 
+  // 先用 URL scheme 唤起地图 App，唤不起来再退回网页版。
+  // 判断依据是页面有没有被切到后台：App 起来了当前页就会变 hidden，没起来就还停在前台。
+  // 注意几个坑：
+  // - 必须用 location.href 触发 scheme。iframe 那套老写法在新版 iOS Safari 已经不生效了。
+  // - App 没装时 location.href 指向未注册的 scheme 并不会真的跳走，页面还在，
+  //   所以不会像之前那样把 PWA 导到一个回不来的页面。
+  // - 兜底用 window.open(_blank)，在 PWA 里会开成带关闭按钮的浮层，不会困住。
+  function openMapApp(schemeUrl, webUrl, timeout = 1500) {
+    let leftPage = false;
+    const onVisibility = () => { if (document.hidden) leftPage = true; };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.location.href = schemeUrl;
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (!leftPage && !document.hidden) window.open(webUrl, '_blank');
+    }, timeout);
+  }
+
   return {
     uuid, todayISO, daysSince, formatMonthsAgo,
     gcj02ToWgs84, haversineDistance, formatDistance,
     detectLinkSource, LINK_SOURCES, normalizeUrl,
-    compressImage, blobToDataURL, formatBytes, escapeHTML,
+    compressImage, blobToDataURL, formatBytes, escapeHTML, openMapApp,
   };
 })();

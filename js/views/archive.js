@@ -207,13 +207,16 @@ const Archive = (() => {
       // 目的地整个丢掉。marker 会把坐标带过去（wgs84 由百度自己转成 bd09），
       // autoOpen 直接弹出该点的信息卡，从那里可以点「到这去」。
       const baiduUrl = `https://api.map.baidu.com/marker?location=${lat},${lng}&title=${name}&content=${name}&coord_type=wgs84&output=html&src=webapp.aftertaste.aftertaste`;
+      // App 里直接进路线规划（起点用手机当前定位），比网页版的标点再点「到这去」少两步
+      const baiduScheme = `baidumap://map/direction?destination=latlng:${lat},${lng}|name:${name}&mode=driving&coord_type=wgs84&src=webapp.aftertaste.aftertaste`;
       const amapUrl = `https://uri.amap.com/navigation?to=${lng},${lat},${name}&mode=car&policy=1&coordinate=wgs84&callnative=1`;
       const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
       navHTML = `
         <div class="detail-field">
           <label>导航</label>
           <div class="external-links">
-            <a class="external-link-btn" href="${baiduUrl}" target="_blank" rel="noopener">🧭 百度地图</a>
+            <a class="external-link-btn" id="nav-baidu" href="${baiduUrl}"
+               data-scheme="${Utils.escapeHTML(baiduScheme)}" target="_blank" rel="noopener">🧭 百度地图</a>
             <a class="external-link-btn" href="${amapUrl}" target="_blank" rel="noopener">🧭 高德地图</a>
             <a class="external-link-btn" href="${googleUrl}" target="_blank" rel="noopener">🌍 Google 地图</a>
           </div>
@@ -276,6 +279,14 @@ const Archive = (() => {
     sheet.querySelectorAll('.detail-photo').forEach((img) => {
       img.onclick = () => UI.openPhotoViewer(photoUrls, Number(img.dataset.idx));
     });
+    // href 仍然是网页版，JS 挂了也点得动；正常情况下先试着唤起 App
+    const navBaidu = sheet.querySelector('#nav-baidu');
+    if (navBaidu) {
+      navBaidu.onclick = (e) => {
+        e.preventDefault();
+        Utils.openMapApp(navBaidu.dataset.scheme, navBaidu.href);
+      };
+    }
     const siblingRow = sheet.querySelector('#sibling-branches');
     if (siblingRow) {
       siblingRow.querySelectorAll('[data-id]').forEach((el) => {
