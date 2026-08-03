@@ -130,6 +130,8 @@ input, select { font-family: inherit; }
   display: flex; flex-direction: column; gap: 8px;
 }
 .shop-card.decayed, .wish-card.decayed { opacity: 0.5; }
+/* 这两种卡片整张可以点开详情（心愿卡片不行，它只有自己那几个按钮） */
+.shop-card, .archive-card { cursor: pointer; }
 
 .shop-group > summary {
   cursor: pointer; list-style: none; position: relative; padding-right: 18px;

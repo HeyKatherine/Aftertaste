@@ -120,9 +120,11 @@ const WantGo = (() => {
         </div>
       </div>
     `);
-    card.querySelector('.btn-approve').onclick = () => openApproveSheet(shop);
-    card.querySelector('.btn-edit').onclick = () => openEditShopSheet(shop);
-    card.querySelector('.btn-drop').onclick = () => dropShop(shop);
+    // 卡片本身点开详情，跟档案卡片一致；三个按钮各自的动作不该顺带把详情弹出来
+    card.querySelector('.btn-approve').onclick = (e) => { e.stopPropagation(); openApproveSheet(shop); };
+    card.querySelector('.btn-edit').onclick = (e) => { e.stopPropagation(); openEditShopSheet(shop); };
+    card.querySelector('.btn-drop').onclick = (e) => { e.stopPropagation(); dropShop(shop); };
+    card.addEventListener('click', () => Archive.openDetail(shop.id));
     return card;
   }
 
