@@ -246,11 +246,28 @@ const RestaurantForm = (() => {
           }
           // 同 archive.js：没坐标的要当场说清楚，别等认可之后才冒出提醒
           const noCoords = checked.filter((cb) => !pois[Number(cb.dataset.bulkIdx)].location).length;
-          UI.toast(noCoords
-            ? `已加入 ${checked.length} 家到想去，其中 ${noCoords} 家高德没给坐标，之后要手动补`
-            : `已加入 ${checked.length} 家到想去`);
+
+          // 正在编辑的这条其实只是用来填连锁店信息的模板：信息已经带到每家分店上了，
+          // 它自己又没有地址，留下来就是列表里一条永远定位不到的重复项。
+          // 只清理「想去」里没填坐标的记录，认可过的店一律不动。
+          const latRaw = sheet.querySelector('#rf-lat').value.trim();
+          const lngRaw = sheet.querySelector('#rf-lng').value.trim();
+          const templateName = sheet.querySelector('#rf-name').value.trim() || initial.name || '';
+          const dropTemplate = !!initial.id && initial.status === 'wishlist'
+            && !latRaw && !lngRaw && checked.length > 0;
+
+          let msg = `已加入 ${checked.length} 家到想去`;
+          if (noCoords) msg += `，其中 ${noCoords} 家高德没给坐标，之后要手动补`;
+          if (dropTemplate) msg += `；没有地址的「${templateName}」已清理`;
+
+          if (dropTemplate) {
+            await DB.Restaurants.remove(initial.id);
+            UI.closeSheet(); // 记录都删了，表单不能再留着提交，否则保存会报「餐厅不存在」
+          } else {
+            amapPanel.classList.add('hidden');
+          }
+          UI.toast(msg);
           App.notifyDataChanged();
-          amapPanel.classList.add('hidden');
         };
       } catch (e) {
         amapResults.innerHTML = `<p class="form-hint">${Utils.escapeHTML(e.message)}</p>`;
