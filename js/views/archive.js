@@ -346,7 +346,7 @@ const Archive = (() => {
             <label class="link-row" style="align-items:flex-start; ${existingNames.has(p.name) ? 'opacity:0.5;' : ''}">
               <input type="checkbox" data-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
               <span style="flex:1;">
-                <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}<br>
+                <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}${!p.location ? ' <span class="form-hint">⚠️ 无坐标</span>' : ''}<br>
                 <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
               </span>
             </label>
@@ -377,7 +377,12 @@ const Archive = (() => {
             notes: p.address || '',
           });
         }
-        UI.toast(`已加入 ${checked.length} 家到想去`);
+        // 高德偶尔会返回没有坐标的 POI。以前这里是静悄悄存成 location: null，
+        // 等你认可之后才冒出一条「N 家认可餐厅没填坐标」，根本联系不到是这次导入造成的。
+        const noCoords = checked.filter((cb) => !pois[Number(cb.dataset.idx)].location).length;
+        UI.toast(noCoords
+          ? `已加入 ${checked.length} 家到想去，其中 ${noCoords} 家高德没给坐标，之后要手动补`
+          : `已加入 ${checked.length} 家到想去`);
         UI.closeSheet();
         App.notifyDataChanged();
       };

@@ -189,7 +189,7 @@ const RestaurantForm = (() => {
           <div class="link-row" style="align-items:flex-start;">
             <input type="checkbox" data-bulk-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
             <span style="flex:1; cursor:pointer;" data-pick-idx="${i}">
-              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在，仍可点击选用坐标）</span>' : ''}<br>
+              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在，仍可点击选用坐标）</span>' : ''}${!p.location ? ' <span class="form-hint">⚠️ 无坐标</span>' : ''}<br>
               <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
             </span>
           </div>
@@ -232,7 +232,11 @@ const RestaurantForm = (() => {
               notes: p.address || '',
             });
           }
-          UI.toast(`已加入 ${checked.length} 家到想去`);
+          // 同 archive.js：没坐标的要当场说清楚，别等认可之后才冒出提醒
+          const noCoords = checked.filter((cb) => !pois[Number(cb.dataset.bulkIdx)].location).length;
+          UI.toast(noCoords
+            ? `已加入 ${checked.length} 家到想去，其中 ${noCoords} 家高德没给坐标，之后要手动补`
+            : `已加入 ${checked.length} 家到想去`);
           App.notifyDataChanged();
           amapPanel.classList.add('hidden');
         };
