@@ -369,12 +369,18 @@ const Archive = (() => {
           const p = pois[Number(cb.dataset.idx)];
           const location = p.location ? Utils.gcj02ToWgs84(p.location.lng, p.location.lat) : null;
           await DB.Restaurants.create({
+            // 分店继承母店的连锁共有属性，不然导进来是空壳、每家都要重填一遍
+            myRating: r.myRating || '',
+            cuisine: r.cuisine || '',
+            scene: [...(r.scene || [])],
+            pricePerPerson: r.pricePerPerson != null ? r.pricePerPerson : null,
+            tags: [...(r.tags || [])],
             name: p.name,
             brand: r.brand,
             status: 'wishlist',
             region: p.city || r.region || '',
             location,
-            notes: p.address || '',
+            notes: r.notes || p.address || '',
           });
         }
         // 高德偶尔会返回没有坐标的 POI。以前这里是静悄悄存成 location: null，

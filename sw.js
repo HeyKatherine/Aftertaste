@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aftertaste-v14';
+const CACHE_NAME = 'aftertaste-v15';
 const CORE_ASSETS = [
   './',
   './index.html',

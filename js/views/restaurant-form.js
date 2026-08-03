@@ -219,17 +219,29 @@ const RestaurantForm = (() => {
         });
         bulkBtn.onclick = async () => {
           const brand = sheet.querySelector('#rf-brand').value.trim();
+          // 分店直接继承你在这张表单里已经填好的连锁店共有属性（跟「认可全部」应用的字段一致）。
+          // 以前只带 brand，导进来全是空壳，等于每家分店都要再认可一遍、重填一次信息。
+          // 店名/坐标/地区是每家自己的，不继承。
+          const formNotes = sheet.querySelector('#rf-notes').value.trim();
+          const shared = {
+            myRating: selectedRating,
+            cuisine: selectedCuisine,
+            scene: [...selectedScenes],
+            pricePerPerson: sheet.querySelector('#rf-price').value ? Number(sheet.querySelector('#rf-price').value) : null,
+            tags: sheet.querySelector('#rf-tags').value.split(',').map((t) => t.trim()).filter(Boolean),
+          };
           const checked = [...rowsEl.querySelectorAll('input:checked')];
           for (const cb of checked) {
             const p = pois[Number(cb.dataset.bulkIdx)];
             const location = p.location ? Utils.gcj02ToWgs84(p.location.lng, p.location.lat) : null;
             await DB.Restaurants.create({
+              ...shared,
               name: p.name,
               brand,
               status: 'wishlist',
               region: p.city || '',
               location,
-              notes: p.address || '',
+              notes: formNotes || p.address || '', // 你自己写的备注优先，没写才退回门店地址
             });
           }
           // 同 archive.js：没坐标的要当场说清楚，别等认可之后才冒出提醒
