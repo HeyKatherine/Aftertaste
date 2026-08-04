@@ -101,6 +101,19 @@ const Archive = (() => {
     return fallback;
   }
 
+  // 照片也是品牌级的：拍的是这个牌子的菜，不属于某个地址。
+  // 各家分店引用的是同一批照片 id，所以汇总时要按 id 去重，否则同一张会出现 N 次。
+  function brandPhotoIds(branchList) {
+    const ids = [];
+    const seen = new Set();
+    for (const r of branchList) {
+      for (const pid of (r.photos || [])) {
+        if (!seen.has(pid)) { seen.add(pid); ids.push(pid); }
+      }
+    }
+    return ids;
+  }
+
   function sortBranches(branchList) {
     return [...branchList].sort((a, b) =>
       (b.lastVisitAt || b.addedAt || '').localeCompare(a.lastVisitAt || a.addedAt || ''));
@@ -350,13 +363,10 @@ const Archive = (() => {
     const totalVisits = branchList.reduce((sum, r) => sum + (r.visitCount || 0), 0);
     const lastVisit = branchList.map((r) => r.lastVisitAt).filter(Boolean).sort().pop();
 
-    // 封面/相册汇总所有分店的照片——照片拍的是这个牌子的菜，不是某个地址的
     const photoUrls = [];
-    for (const r of branchList) {
-      for (const pid of (r.photos || [])) {
-        const p = await DB.Photos.get(pid);
-        if (p) photoUrls.push(URL.createObjectURL(p.blob));
-      }
+    for (const pid of brandPhotoIds(branchList)) {
+      const p = await DB.Photos.get(pid);
+      if (p) photoUrls.push(URL.createObjectURL(p.blob));
     }
     const photosHTML = photoUrls.length
       ? `<div class="detail-photos">${photoUrls.map((u, i) => `<img class="detail-photo" data-idx="${i}" src="${u}">`).join('')}</div>`
@@ -420,6 +430,7 @@ const Archive = (() => {
 
   // 改一次，应用到该品牌所有分店；店名/地址/链接是每家自己的，不碰
   function openEditBrandSheet(brand, branchList) {
+    const photoPicker = UI.createPhotoPicker(brandPhotoIds(branchList));
     let selectedRating = sharedField(branchList, 'myRating');
     let selectedCuisine = sharedField(branchList, 'cuisine');
     const selectedScenes = new Set(sharedField(branchList, 'scene', []));
@@ -429,7 +440,7 @@ const Archive = (() => {
 
     const sheet = UI.openSheet(`
       <div class="sheet-header"><h2>编辑「${Utils.escapeHTML(brand)}」</h2><button class="sheet-close">✕</button></div>
-      <p class="form-hint" style="margin-bottom:14px;">这里改的内容会同时写入 ${branchList.length} 家分店；每家的店名和地址不受影响</p>
+      <p class="form-hint" style="margin-bottom:14px;">这里改的内容（含照片）会同时写入 ${branchList.length} 家分店；每家的店名和地址不受影响</p>
       <form id="edit-brand-form">
         <div class="form-field">
           <label>评级</label>
@@ -461,6 +472,10 @@ const Archive = (() => {
           <label>备注</label>
           <textarea id="eb-notes" placeholder="全系列都不错">${Utils.escapeHTML(notes)}</textarea>
         </div>
+        <div class="form-field">
+          <label>照片</label>
+          <div id="eb-photos"></div>
+        </div>
         <div class="modal-actions" style="margin-top:10px;">
           <button type="button" class="btn btn-ghost" id="eb-cancel">取消</button>
           <button type="submit" class="btn btn-primary">保存到 ${branchList.length} 家</button>
@@ -469,6 +484,7 @@ const Archive = (() => {
     `);
     sheet.querySelector('.sheet-close').onclick = UI.closeSheet;
     sheet.querySelector('#eb-cancel').onclick = UI.closeSheet;
+    sheet.querySelector('#eb-photos').appendChild(photoPicker.container);
 
     const ratingRow = sheet.querySelector('#eb-rating');
     ratingRow.addEventListener('click', (e) => {
@@ -506,6 +522,7 @@ const Archive = (() => {
         pricePerPerson: sheet.querySelector('#eb-price').value ? Number(sheet.querySelector('#eb-price').value) : null,
         tags: sheet.querySelector('#eb-tags').value.split(',').map((t) => t.trim()).filter(Boolean),
         notes: sheet.querySelector('#eb-notes').value.trim(),
+        photos: photoPicker.getIds(), // 写同一份 id 列表给每家分店，照片本身在库里只存一份
       };
       for (const r of branchList) await DB.Restaurants.update(r.id, patch);
       UI.closeSheet();
