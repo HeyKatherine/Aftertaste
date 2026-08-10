@@ -7,6 +7,7 @@ const Archive = (() => {
   function init() {
     document.getElementById('btn-archive-filter').addEventListener('click', () => {
       document.getElementById('archive-filter-panel').classList.toggle('hidden');
+      updateFilterToggle();
     });
     document.getElementById('archive-search').addEventListener('input', (e) => {
       searchQuery = e.target.value.trim().toLowerCase();
@@ -20,9 +21,13 @@ const Archive = (() => {
 
     const panel = document.getElementById('archive-filter-panel');
     if (!filterPanelBuilt) {
+      // 档案是「翻自己的收藏」，品牌和城市在这里是有用的维度，保留
       const { getState } = Filters.createPanel(panel, approved, (state) => {
         filterState = state;
+        updateFilterToggle();
         renderList();
+      }, {
+        onClose: () => { panel.classList.add('hidden'); updateFilterToggle(); },
       });
       filterPanelBuilt = true;
       filterState = getState();
@@ -88,6 +93,13 @@ const Archive = (() => {
       }
     }
     return `<div class="card-thumb-placeholder">${fallbackEmoji}</div>`;
+  }
+
+  function updateFilterToggle() {
+    const btn = document.getElementById('btn-archive-filter');
+    const open = !document.getElementById('archive-filter-panel').classList.contains('hidden');
+    const n = Filters.countActive(filterState);
+    btn.textContent = `筛选${n ? ' · ' + n : ''} ${open ? '▴' : '▾'}`;
   }
 
   // 连锁店的评级/菜系/备注这些是品牌级的，分店只负责各自的地址。批量导入时分店就继承好了，

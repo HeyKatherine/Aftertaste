@@ -26,6 +26,7 @@ const Find = (() => {
     });
     document.getElementById('btn-filter-toggle').addEventListener('click', () => {
       document.getElementById('find-filter-panel').classList.toggle('hidden');
+      updateFilterToggle();
     });
     document.getElementById('btn-pick-random').addEventListener('click', () => openPicker());
 
@@ -79,6 +80,14 @@ const Find = (() => {
     } catch (e) {
       resultsEl.innerHTML = `<p class="form-hint">${Utils.escapeHTML(e.message)}</p>`;
     }
+  }
+
+  // 按钮上带箭头方向和生效条件数，不展开也知道现在筛没筛
+  function updateFilterToggle() {
+    const btn = document.getElementById('btn-filter-toggle');
+    const open = !document.getElementById('find-filter-panel').classList.contains('hidden');
+    const n = Filters.countActive(filterState);
+    btn.textContent = `筛选${n ? ' · ' + n : ''} ${open ? '▴' : '▾'}`;
   }
 
   function applyViewMode() {
@@ -156,9 +165,14 @@ const Find = (() => {
 
     const panel = document.getElementById('find-filter-panel');
     if (!filterPanelBuilt) {
+      // 找店按距离筛，城市已经被「范围」隐含了；品牌是逛档案时的维度，这里不需要
       const { getState } = Filters.createPanel(panel, relevant, (state) => {
         filterState = state;
+        updateFilterToggle();
         refresh();
+      }, {
+        groups: ['cuisine', 'scene', 'rating', 'price'],
+        onClose: () => { panel.classList.add('hidden'); updateFilterToggle(); },
       });
       filterPanelBuilt = true;
       filterState = getState();
