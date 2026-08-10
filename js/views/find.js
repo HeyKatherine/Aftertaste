@@ -268,32 +268,64 @@ const Find = (() => {
         const photo = await DB.Photos.get(r.photos[0]);
         if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
       }
+      // 背面盖着，翻开才是结果
       return `
-        <div class="shop-card" data-id="${r.id}" style="cursor:pointer;">
-          <div class="card-top-row">
-            ${thumbHTML}
-            <div class="card-title-block">
-              <p class="card-title">${Utils.escapeHTML(r.name)}</p>
-              <p class="card-subtitle">${[r.cuisine, r.myRating].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
+        <div class="draw-card" data-id="${r.id}">
+          <div class="draw-card-inner">
+            <div class="draw-card-face">
+              <div class="shop-card">
+                <div class="card-top-row">
+                  ${thumbHTML}
+                  <div class="card-title-block">
+                    <p class="card-title">${Utils.escapeHTML(r.name)}</p>
+                    <p class="card-subtitle">${[r.cuisine, r.myRating].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
+                  </div>
+                </div>
+              </div>
             </div>
+            <div class="draw-card-back">🎲</div>
           </div>
         </div>
       `;
     }));
     const box = UI.openModal(`
-      <h2 style="font-size:18px;font-weight:800;margin-bottom:14px;text-align:center;">🎲 帮你选了这家</h2>
+      <button type="button" class="sheet-close picker-close" id="picker-close" aria-label="关闭">✕</button>
+      <h2 style="font-size:18px;font-weight:800;margin-bottom:14px;text-align:center;">🎲 ${picks.length > 1 ? `抽了 ${picks.length} 家` : '帮你选了这家'}</h2>
       <div class="card-list" id="picker-results">${cardsHTML.join('')}</div>
       <div class="modal-actions" style="margin-top:16px;">
         <button type="button" class="btn btn-ghost" id="picker-reroll">再抽一次</button>
         <button type="button" class="btn btn-secondary" id="picker-three">抽3家二选一</button>
       </div>
     `);
-    box.querySelectorAll('#picker-results [data-id]').forEach((el) => {
+
+    const reveal = (card) => {
+      card.classList.remove('shaking');
+      card.classList.add('revealed');
+    };
+    // 先抖一下攒点悬念，再依次翻开
+    const cards = [...box.querySelectorAll('.draw-card')];
+    cards.forEach((card, i) => {
+      card.classList.add('shaking');
+      setTimeout(() => reveal(card), 420 + i * 160);
+    });
+
+    cards.forEach((el) => {
       el.onclick = () => {
+        // 没耐心等翻牌的话，点一下直接翻开；已经翻开了才进详情
+        if (!el.classList.contains('revealed')) { reveal(el); return; }
         UI.closeModal();
         Archive.openDetail(el.dataset.id);
       };
     });
+
+    // openModal 本身没有点背景关闭的行为（confirmDialog 要靠按钮 resolve promise，
+    // 全局加上会让它的 promise 永远挂着），所以只在抽卡这里补关闭入口
+    box.querySelector('#picker-close').onclick = UI.closeModal;
+    const backdrop = box.parentElement;
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) UI.closeModal();
+    });
+
     box.querySelector('#picker-reroll').onclick = () => renderPickerModal(pool, n);
     box.querySelector('#picker-three').onclick = () => renderPickerModal(pool, 3);
   }

@@ -270,9 +270,38 @@ input, select { font-family: inherit; }
 .modal-box {
   background: var(--bg); width: 100%; max-width: 400px; border-radius: var(--radius-lg);
   padding: 22px; animation: modal-pop 0.18s ease;
+  position: relative; /* 抽卡弹窗的关闭按钮要贴右上角 */
 }
 @keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes modal-pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ============ 抽卡（帮我选） ============ */
+.picker-close { position: absolute; top: 14px; right: 14px; z-index: 1; }
+.draw-card { perspective: 900px; cursor: pointer; }
+.draw-card-inner {
+  position: relative; transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.draw-card.revealed .draw-card-inner { transform: rotateY(180deg); }
+/* 正面先转过去背对着，翻转到 180° 时刚好正对；两面都要 backface-visibility 才不会互相透出来 */
+.draw-card-face { backface-visibility: hidden; transform: rotateY(180deg); }
+.draw-card-back {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center; font-size: 38px;
+}
+@keyframes draw-shake {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-7px) rotate(-2deg); }
+  75% { transform: translateY(-7px) rotate(2deg); }
+}
+.draw-card.shaking { animation: draw-shake 0.42s ease-in-out; }
+/* 系统开了「减弱动效」就直接给结果，不做翻转和抖动 */
+@media (prefers-reduced-motion: reduce) {
+  .draw-card-inner { transition: none; }
+  .draw-card.shaking { animation: none; }
+}
 
 .sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .sheet-header h2 { font-size: 19px; font-weight: 800; }
