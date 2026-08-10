@@ -133,6 +133,23 @@ input, select { font-family: inherit; }
 /* 这两种卡片整张可以点开详情（心愿卡片不行，它只有自己那几个按钮） */
 .shop-card, .archive-card { cursor: pointer; }
 
+/* ============ 按压反馈 ============ */
+.shop-card, .archive-card, .wish-card, .btn, .chip-select, .filter-chip, .link-row, .btn-checkin {
+  transition: transform 0.13s ease, opacity 0.13s ease, background 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.shop-card:active, .archive-card:active { transform: scale(0.985); }
+.btn:active, .btn-checkin:active { transform: scale(0.96); }
+.chip-select:active, .filter-chip:active { transform: scale(0.93); }
+.link-row:active { background: var(--card-bg); transform: scale(0.99); }
+/* 抽卡的正面在 3D 变换里，再叠一层缩放会跟翻转打架 */
+.draw-card .shop-card:active { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .shop-card, .archive-card, .wish-card, .btn, .chip-select, .filter-chip, .link-row, .btn-checkin { transition: none; }
+  .shop-card:active, .archive-card:active, .btn:active,
+  .btn-checkin:active, .chip-select:active, .filter-chip:active, .link-row:active { transform: none; }
+}
+
 .shop-group > summary {
   cursor: pointer; list-style: none; position: relative; padding-right: 18px;
 }
@@ -258,6 +275,21 @@ input, select { font-family: inherit; }
 .overlay-backdrop {
   position: fixed; inset: 0; background: rgba(30, 20, 15, 0.4); z-index: 2000;
   display: flex; align-items: flex-end; justify-content: center;
+  animation: backdrop-in 0.2s ease;
+}
+/* 退场：JS 加上 .closing，等动画跑完才把节点摘掉 */
+.overlay-backdrop.closing { animation: backdrop-out 0.22s ease forwards; pointer-events: none; }
+.overlay-backdrop.closing .sheet { animation: sheet-down 0.22s ease forwards; }
+.overlay-backdrop.closing .modal-box { animation: modal-pop-out 0.18s ease forwards; }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes sheet-down { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes modal-pop-out { from { transform: scale(1); opacity: 1; } to { transform: scale(0.94); opacity: 0; } }
+
+/* 往下拖关闭时的把手 */
+.sheet-grabber {
+  width: 36px; height: 4px; border-radius: 999px; background: var(--border);
+  margin: -4px auto 12px;
 }
 /* modal 可能在 sheet 还开着的时候弹出（比如详情页里点删除的二次确认），
    必须比 sheet 的 z-index 高，不然纯靠 DOM 顺序会被后挂载的 sheet 盖住 */
@@ -266,6 +298,9 @@ input, select { font-family: inherit; }
   background: var(--bg); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
   border-radius: 24px 24px 0 0; padding: 18px 20px calc(24px + env(safe-area-inset-bottom));
   animation: sheet-up 0.22s ease;
+  /* 滚到顶还继续往下拖时，别把滚动传给底下的页面 */
+  overscroll-behavior: contain;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .modal-box {
   background: var(--bg); width: 100%; max-width: 400px; border-radius: var(--radius-lg);
@@ -310,7 +345,9 @@ input, select { font-family: inherit; }
 .photo-viewer-backdrop {
   position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 2200;
   display: flex; align-items: center; justify-content: center; flex-direction: column;
+  animation: backdrop-in 0.18s ease;
 }
+.photo-viewer-backdrop.closing { animation: backdrop-out 0.18s ease forwards; pointer-events: none; }
 .photo-viewer-backdrop img { width: 92vw; height: 78vh; object-fit: contain; border-radius: var(--radius-md); }
 .photo-viewer-close, .photo-viewer-nav {
   position: absolute; border: none; background: rgba(255, 255, 255, 0.15); color: #fff;

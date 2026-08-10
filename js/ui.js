@@ -18,29 +18,86 @@ const UI = (() => {
   const sheetRoot = () => document.getElementById('sheet-root');
   const modalRoot = () => document.getElementById('modal-root');
 
+  // 退场：先加 .closing 播动画，动画完了再摘节点。
+  // 兜底计时器是必须的——元素被 display:none 或页面切到后台时 animationend 不一定会来。
+  function dismiss(backdrop, ms) {
+    if (!backdrop || backdrop.classList.contains('closing')) return;
+    backdrop.classList.add('closing');
+    const done = () => backdrop.remove();
+    backdrop.addEventListener('animationend', done, { once: true });
+    setTimeout(done, ms);
+  }
+
   function openSheet(innerHTML) {
-    closeSheet();
-    const backdrop = el(`<div class="overlay-backdrop"><div class="sheet">${innerHTML}</div></div>`);
+    // 直接清空而不是走 closeSheet()：常见写法是关掉一个 sheet 紧接着开下一个
+    // （比如品牌详情点进分店），等退场动画会让两层叠在一起
+    sheetRoot().innerHTML = '';
+    const backdrop = el(`<div class="overlay-backdrop"><div class="sheet"><div class="sheet-grabber"></div>${innerHTML}</div></div>`);
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) closeSheet();
     });
     sheetRoot().appendChild(backdrop);
     document.body.style.overflow = 'hidden';
-    return backdrop.querySelector('.sheet');
+    const sheet = backdrop.querySelector('.sheet');
+    attachSheetDrag(backdrop, sheet);
+    return sheet;
   }
   function closeSheet() {
-    sheetRoot().innerHTML = '';
+    dismiss(sheetRoot().firstElementChild, 260);
     document.body.style.overflow = '';
   }
 
+  // 往下拖着关，跟 iOS 的 sheet 一个手感
+  function attachSheetDrag(backdrop, sheet) {
+    const CLOSE_AT = 110;
+    let startY = 0, startX = 0, offset = 0, dragging = false, locked = false;
+
+    sheet.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      // 内容还能往上滚的时候不抢手势，否则没法正常翻内容
+      if (sheet.scrollTop > 0) return;
+      dragging = true; locked = false; offset = 0;
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+
+    sheet.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const dy = e.touches[0].clientY - startY;
+      const dx = e.touches[0].clientX - startX;
+      // 方向锁：横向滑动（详情页的照片条就是横滚的）不该被当成下拉
+      if (!locked) {
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) { dragging = false; return; }
+        if (Math.abs(dy) > 6) locked = true; else return;
+      }
+      if (dy <= 0) { offset = 0; sheet.style.transform = ''; return; }
+      e.preventDefault();
+      offset = dy;
+      sheet.style.transform = `translateY(${dy}px)`;
+      backdrop.style.background = `rgba(30, 20, 15, ${(0.4 * Math.max(0, 1 - dy / 420)).toFixed(3)})`;
+    }, { passive: false });
+
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      sheet.style.transition = '';
+      if (offset > CLOSE_AT) { closeSheet(); return; }
+      sheet.style.transform = '';
+      backdrop.style.background = '';
+    };
+    sheet.addEventListener('touchend', end);
+    sheet.addEventListener('touchcancel', end);
+  }
+
   function openModal(innerHTML) {
-    closeModal();
+    modalRoot().innerHTML = '';
     const backdrop = el(`<div class="overlay-backdrop modal-center"><div class="modal-box">${innerHTML}</div></div>`);
     modalRoot().appendChild(backdrop);
     return backdrop.querySelector('.modal-box');
   }
   function closeModal() {
-    modalRoot().innerHTML = '';
+    dismiss(modalRoot().firstElementChild, 220);
   }
 
   function confirmDialog({ title = '确认', message = '', confirmText = '确认', cancelText = '取消', danger = false }) {
@@ -62,7 +119,7 @@ const UI = (() => {
   const photoViewerRoot = () => document.getElementById('photo-viewer-root');
 
   function openPhotoViewer(urls, startIndex = 0) {
-    closePhotoViewer();
+    photoViewerRoot().innerHTML = ''; // 同 openSheet：不等退场动画，避免两层叠着
     let idx = startIndex;
     const multi = urls.length > 1;
     const backdrop = el(`
@@ -92,7 +149,7 @@ const UI = (() => {
     photoViewerRoot().appendChild(backdrop);
   }
   function closePhotoViewer() {
-    photoViewerRoot().innerHTML = '';
+    dismiss(photoViewerRoot().firstElementChild, 220);
   }
 
   // ---------- Photo Picker ----------
