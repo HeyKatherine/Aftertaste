@@ -263,75 +263,154 @@ const Find = (() => {
     }
   }
 
-  function pickRandomN(pool, n) {
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, n);
-  }
+  const LOOKAHEAD = 3; // 同时挂在 DOM 里的牌数，够看出"下面还有"就行
 
   async function openPicker() {
     const pool = await getPool();
     if (!pool.length) { UI.toast('当前筛选下没有可选的店'); return; }
-    await renderPickerModal(pool, 1);
+    await renderPickerModal(pool);
   }
 
-  async function renderPickerModal(pool, n) {
-    const picks = pickRandomN(pool, Math.min(n, pool.length));
-    const cardsHTML = await Promise.all(picks.map(async (r) => {
-      let photoStyle = '';
-      if (r.photos && r.photos.length) {
-        const photo = await DB.Photos.get(r.photos[0]);
-        if (photo) photoStyle = ` style="background-image:url(${URL.createObjectURL(photo.blob)})"`;
-      }
-      const meta = [r.cuisine, r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
-        .filter(Boolean).map(Utils.escapeHTML).join(' · ');
-      // 落定时给个几度的随机倾斜，像随手甩在桌上的一张牌，而不是正对着你的方块
-      const tilt = (Math.random() * 5 - 2.5).toFixed(2);
-      return `
-        <div class="draw-card" data-id="${r.id}" style="--tilt:${tilt}deg;">
-          <div class="draw-deck-back"></div>
-          <div class="draw-card-inner">
-            <div class="draw-card-face">
-              <div class="draw-face-photo${photoStyle ? '' : ' is-empty'}"${photoStyle}>${photoStyle ? '' : '🍽️'}</div>
-              <div class="draw-face-info">
-                <p class="draw-face-name">${Utils.escapeHTML(r.name)}</p>
-                ${meta ? `<p class="draw-face-meta">${meta}</p>` : ''}
-              </div>
+  async function buildDrawCard(r) {
+    let photoStyle = '';
+    if (r.photos && r.photos.length) {
+      const photo = await DB.Photos.get(r.photos[0]);
+      if (photo) photoStyle = ` style="background-image:url(${URL.createObjectURL(photo.blob)})"`;
+    }
+    const meta = [r.cuisine, r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
+      .filter(Boolean).map(Utils.escapeHTML).join(' · ');
+    // 每张给个几度的随机倾斜，像一沓随手摞起来的牌，而不是对齐的方块
+    const tilt = (Math.random() * 5 - 2.5).toFixed(2);
+    const card = UI.el(`
+      <div class="draw-card" data-id="${r.id}" style="--tilt:${tilt}deg;">
+        <div class="draw-card-inner">
+          <div class="draw-card-face">
+            <div class="draw-face-photo${photoStyle ? '' : ' is-empty'}"${photoStyle}>${photoStyle ? '' : '🍽️'}</div>
+            <div class="draw-face-info">
+              <p class="draw-face-name">${Utils.escapeHTML(r.name)}</p>
+              ${meta ? `<p class="draw-face-meta">${meta}</p>` : ''}
             </div>
-            <div class="draw-card-back"><span>🎲</span></div>
           </div>
+          <div class="draw-card-back"><span>🎲</span></div>
         </div>
-      `;
-    }));
+      </div>
+    `);
+    return card;
+  }
+
+  async function renderPickerModal(pool) {
+    let queue = [...pool].sort(() => Math.random() - 0.5);
+    let cursor = 0;
+    const single = pool.length === 1;
+
     const box = UI.openModal(`
       <button type="button" class="sheet-close picker-close" id="picker-close" aria-label="关闭">✕</button>
-      <h2 class="picker-title">🎲 ${picks.length > 1 ? `抽了 ${picks.length} 家` : '帮你选了这家'}</h2>
-      <div class="draw-deck${picks.length > 1 ? ' multi' : ''}" id="picker-results">${cardsHTML.join('')}</div>
-      <div class="modal-actions" style="margin-top:14px;">
-        <button type="button" class="btn btn-ghost" id="picker-reroll">再抽一次</button>
-        <button type="button" class="btn btn-secondary" id="picker-three">抽3家二选一</button>
+      <h2 class="picker-title">🎲 帮你选了这家</h2>
+      <div class="draw-stack" id="draw-stack"></div>
+      <p class="draw-hint" id="draw-hint">${single ? '就这一家了' : '← 左右划走，换下一家 →'}</p>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button type="button" class="btn btn-ghost btn-full" id="picker-reroll" style="flex:1;">${single ? '重新翻一次' : '换一家'}</button>
       </div>
     `);
     box.classList.add('picker-box');
+    const stack = box.querySelector('#draw-stack');
 
-    const reveal = (card) => {
-      card.classList.remove('shaking');
-      card.classList.add('revealed');
-    };
-    // 先抖一下攒点悬念，再依次翻开
-    const cards = [...box.querySelectorAll('.draw-card')];
-    cards.forEach((card, i) => {
-      card.classList.add('shaking');
-      setTimeout(() => reveal(card), 420 + i * 160);
-    });
+    const topCard = () => stack.querySelector('.draw-card.is-top');
 
-    cards.forEach((el) => {
-      el.onclick = () => {
-        // 没耐心等翻牌的话，点一下直接翻开；已经翻开了才进详情
-        if (!el.classList.contains('revealed')) { reveal(el); return; }
-        UI.closeModal();
-        Archive.openDetail(el.dataset.id);
+    function relayout() {
+      const cards = [...stack.querySelectorAll('.draw-card')];
+      // DOM 里靠后的在视觉上更靠上，所以 depth 从后往前数
+      cards.forEach((c, i) => {
+        const depth = cards.length - 1 - i;
+        c.style.setProperty('--depth', depth);
+        c.classList.toggle('is-top', depth === 0);
+      });
+      const top = cards[cards.length - 1];
+      if (top && !top.classList.contains('revealed')) {
+        top.classList.add('shaking');
+        setTimeout(() => {
+          top.classList.remove('shaking');
+          top.classList.add('revealed');
+        }, 320);
+      }
+    }
+
+    // 池子比 LOOKAHEAD 还小的时候别硬凑，否则会叠出几张一模一样的牌
+    const maxStack = Math.min(LOOKAHEAD, pool.length);
+
+    async function fill() {
+      while (stack.querySelectorAll('.draw-card').length < maxStack) {
+        if (cursor >= queue.length) {
+          if (!queue.length) break;
+          queue = [...pool].sort(() => Math.random() - 0.5); // 看完一轮就重新洗牌，接着抽
+          cursor = 0;
+        }
+        const card = await buildDrawCard(queue[cursor++]);
+        attachCardHandlers(card);
+        stack.prepend(card); // 插到最底下
+      }
+      relayout();
+    }
+
+    async function advance() {
+      await fill();
+    }
+
+    function flyOut(card, dir) {
+      card.style.transition = 'transform 0.32s ease-in, opacity 0.32s ease-in';
+      card.style.transform = `translateX(${dir * 520}px) rotate(${dir * 20}deg)`;
+      card.style.opacity = '0';
+      setTimeout(() => { card.remove(); advance(); }, 300);
+    }
+
+    function attachCardHandlers(card) {
+      let x0 = 0, y0 = 0, dx = 0, dragging = false, locked = false, moved = false;
+
+      card.addEventListener('touchstart', (e) => {
+        if (!card.classList.contains('is-top') || e.touches.length !== 1) return;
+        dragging = true; locked = false; moved = false; dx = 0;
+        x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+        card.style.transition = 'none';
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        if (!dragging) return;
+        const ddx = e.touches[0].clientX - x0;
+        const ddy = e.touches[0].clientY - y0;
+        // 方向锁：竖着划是想滚页面，别抢
+        if (!locked) {
+          if (Math.abs(ddy) > Math.abs(ddx) && Math.abs(ddy) > 8) { dragging = false; return; }
+          if (Math.abs(ddx) > 8) locked = true; else return;
+        }
+        e.preventDefault();
+        dx = ddx; moved = true;
+        card.style.transform = `translateX(${dx}px) rotate(${(dx / 22).toFixed(2)}deg)`;
+        card.style.opacity = String(Math.max(0.4, 1 - Math.abs(dx) / 420));
+      }, { passive: false });
+
+      const end = () => {
+        if (!dragging) return;
+        dragging = false;
+        card.style.transition = '';
+        if (Math.abs(dx) > 90 && !single) { flyOut(card, dx > 0 ? 1 : -1); return; }
+        card.style.transform = ''; card.style.opacity = ''; // 没划够就弹回去
       };
-    });
+      card.addEventListener('touchend', end);
+      card.addEventListener('touchcancel', end);
+
+      card.addEventListener('click', () => {
+        if (moved) { moved = false; return; } // 刚划过就别当成点击
+        if (!card.classList.contains('revealed')) {
+          card.classList.remove('shaking');
+          card.classList.add('revealed');
+          return;
+        }
+        UI.closeModal();
+        Archive.openDetail(card.dataset.id);
+      });
+    }
+
+    await fill();
 
     // openModal 本身没有点背景关闭的行为（confirmDialog 要靠按钮 resolve promise，
     // 全局加上会让它的 promise 永远挂着），所以只在抽卡这里补关闭入口
@@ -340,9 +419,16 @@ const Find = (() => {
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) UI.closeModal();
     });
-
-    box.querySelector('#picker-reroll').onclick = () => renderPickerModal(pool, n);
-    box.querySelector('#picker-three').onclick = () => renderPickerModal(pool, 3);
+    box.querySelector('#picker-reroll').onclick = () => {
+      const top = topCard();
+      if (!top) return;
+      if (single) { // 只有一家可选，划走没意义，就重新翻一次
+        top.classList.remove('revealed');
+        setTimeout(() => top.classList.add('revealed'), 260);
+        return;
+      }
+      flyOut(top, 1);
+    };
   }
 
   return { init, refresh, applyViewMode };

@@ -316,25 +316,34 @@ input, select { font-family: inherit; }
 .picker-close { position: absolute; top: 14px; right: 14px; z-index: 2; }
 .picker-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; text-align: center; }
 
-/* 一副牌：单张时占满，多张时留出两侧邻牌的边，横向 snap 翻看 */
-.draw-deck { display: flex; gap: 16px; padding: 18px 2px 8px; }
-.draw-deck.multi {
-  overflow-x: auto; scroll-snap-type: x mandatory;
-  padding-left: 24px; padding-right: 24px; scroll-padding: 0 24px;
+/* 一叠牌：最上面那张可以左右划走，露出下面一张 */
+.draw-stack { position: relative; aspect-ratio: 3 / 4; margin: 16px 6px 4px; }
+.draw-card {
+  position: absolute; inset: 0; perspective: 1000px; cursor: pointer;
+  /* --depth 0 是最上面那张，越往下越小越靠后 */
+  transform: translateY(calc(var(--depth, 0) * 12px))
+             scale(calc(1 - var(--depth, 0) * 0.05))
+             rotate(var(--tilt, 0deg));
+  transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.3s ease;
+  touch-action: pan-y; /* 横向留给划牌，纵向照常滚页面 */
 }
-.draw-deck.multi::-webkit-scrollbar { display: none; }
-.draw-card { flex: 0 0 100%; position: relative; perspective: 1000px; cursor: pointer; }
-.draw-deck.multi .draw-card { flex-basis: 92%; scroll-snap-align: center; }
+.draw-card:not(.is-top) { pointer-events: none; }
 
-/* 卡片本体做大：接近实体卡的比例，照片当主体 */
 .draw-card-inner {
-  position: relative; aspect-ratio: 3 / 4; transform-style: preserve-3d;
+  position: relative; height: 100%; transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .draw-card.revealed .draw-card-inner { transform: rotateY(180deg); }
-/* 倾斜放在外层，跟内层的翻转分开，两个 transform 不会互相干扰 */
-.draw-card { transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1); }
-.draw-card.revealed { transform: rotate(var(--tilt, 0deg)); }
+
+.draw-hint {
+  text-align: center; font-size: 12px; color: var(--text-faint);
+  margin-top: 12px; user-select: none;
+}
+.draw-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px; text-align: center;
+  color: var(--text-secondary); font-size: 14px;
+}
 
 .draw-card-face, .draw-card-back {
   position: absolute; inset: 0; backface-visibility: hidden;
@@ -366,15 +375,6 @@ input, select { font-family: inherit; }
   content: ""; position: absolute; inset: 12px; border-radius: 14px;
   border: 2px dashed rgba(255, 255, 255, 0.45);
 }
-/* 身后垫两张错位的牌，读起来是「从一副牌里抽」而不是孤零零一张 */
-.draw-deck-back { position: absolute; inset: 0; }
-.draw-deck-back::before, .draw-deck-back::after {
-  content: ""; position: absolute; inset: 0; border-radius: 22px;
-  background: var(--card-bg); box-shadow: 0 6px 16px rgba(30, 20, 15, 0.16);
-}
-.draw-deck-back::before { transform: rotate(-5deg) translateY(6px); }
-.draw-deck-back::after { transform: rotate(3.5deg) translateY(3px); }
-.draw-deck.multi .draw-deck-back { display: none; }
 @keyframes draw-shake {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   25% { transform: translateY(-7px) rotate(-2deg); }
