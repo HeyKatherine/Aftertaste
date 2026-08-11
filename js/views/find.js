@@ -277,40 +277,41 @@ const Find = (() => {
   async function renderPickerModal(pool, n) {
     const picks = pickRandomN(pool, Math.min(n, pool.length));
     const cardsHTML = await Promise.all(picks.map(async (r) => {
-      let thumbHTML = '<div class="card-thumb-placeholder">🍽️</div>';
+      let photoStyle = '';
       if (r.photos && r.photos.length) {
         const photo = await DB.Photos.get(r.photos[0]);
-        if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
+        if (photo) photoStyle = ` style="background-image:url(${URL.createObjectURL(photo.blob)})"`;
       }
-      // 背面盖着，翻开才是结果
+      const meta = [r.cuisine, r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
+        .filter(Boolean).map(Utils.escapeHTML).join(' · ');
+      // 落定时给个几度的随机倾斜，像随手甩在桌上的一张牌，而不是正对着你的方块
+      const tilt = (Math.random() * 5 - 2.5).toFixed(2);
       return `
-        <div class="draw-card" data-id="${r.id}">
+        <div class="draw-card" data-id="${r.id}" style="--tilt:${tilt}deg;">
+          <div class="draw-deck-back"></div>
           <div class="draw-card-inner">
             <div class="draw-card-face">
-              <div class="shop-card">
-                <div class="card-top-row">
-                  ${thumbHTML}
-                  <div class="card-title-block">
-                    <p class="card-title">${Utils.escapeHTML(r.name)}</p>
-                    <p class="card-subtitle">${[r.cuisine, r.myRating].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
-                  </div>
-                </div>
+              <div class="draw-face-photo${photoStyle ? '' : ' is-empty'}"${photoStyle}>${photoStyle ? '' : '🍽️'}</div>
+              <div class="draw-face-info">
+                <p class="draw-face-name">${Utils.escapeHTML(r.name)}</p>
+                ${meta ? `<p class="draw-face-meta">${meta}</p>` : ''}
               </div>
             </div>
-            <div class="draw-card-back">🎲</div>
+            <div class="draw-card-back"><span>🎲</span></div>
           </div>
         </div>
       `;
     }));
     const box = UI.openModal(`
       <button type="button" class="sheet-close picker-close" id="picker-close" aria-label="关闭">✕</button>
-      <h2 style="font-size:18px;font-weight:800;margin-bottom:14px;text-align:center;">🎲 ${picks.length > 1 ? `抽了 ${picks.length} 家` : '帮你选了这家'}</h2>
-      <div class="card-list" id="picker-results">${cardsHTML.join('')}</div>
-      <div class="modal-actions" style="margin-top:16px;">
+      <h2 class="picker-title">🎲 ${picks.length > 1 ? `抽了 ${picks.length} 家` : '帮你选了这家'}</h2>
+      <div class="draw-deck${picks.length > 1 ? ' multi' : ''}" id="picker-results">${cardsHTML.join('')}</div>
+      <div class="modal-actions" style="margin-top:14px;">
         <button type="button" class="btn btn-ghost" id="picker-reroll">再抽一次</button>
         <button type="button" class="btn btn-secondary" id="picker-three">抽3家二选一</button>
       </div>
     `);
+    box.classList.add('picker-box');
 
     const reveal = (card) => {
       card.classList.remove('shaking');

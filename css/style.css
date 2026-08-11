@@ -311,21 +311,70 @@ input, select { font-family: inherit; }
 @keyframes modal-pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* ============ 抽卡（帮我选） ============ */
-.picker-close { position: absolute; top: 14px; right: 14px; z-index: 1; }
-.draw-card { perspective: 900px; cursor: pointer; }
+/* 卡片按 3:4 撑开，矮屏手机上兜底允许滚动，别把按钮顶出屏幕 */
+.picker-box { max-width: 440px; padding: 18px 16px 16px; max-height: 92vh; overflow-y: auto; }
+.picker-close { position: absolute; top: 14px; right: 14px; z-index: 2; }
+.picker-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; text-align: center; }
+
+/* 一副牌：单张时占满，多张时留出两侧邻牌的边，横向 snap 翻看 */
+.draw-deck { display: flex; gap: 16px; padding: 18px 2px 8px; }
+.draw-deck.multi {
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  padding-left: 24px; padding-right: 24px; scroll-padding: 0 24px;
+}
+.draw-deck.multi::-webkit-scrollbar { display: none; }
+.draw-card { flex: 0 0 100%; position: relative; perspective: 1000px; cursor: pointer; }
+.draw-deck.multi .draw-card { flex-basis: 92%; scroll-snap-align: center; }
+
+/* 卡片本体做大：接近实体卡的比例，照片当主体 */
 .draw-card-inner {
-  position: relative; transform-style: preserve-3d;
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative; aspect-ratio: 3 / 4; transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .draw-card.revealed .draw-card-inner { transform: rotateY(180deg); }
-/* 正面先转过去背对着，翻转到 180° 时刚好正对；两面都要 backface-visibility 才不会互相透出来 */
-.draw-card-face { backface-visibility: hidden; transform: rotateY(180deg); }
-.draw-card-back {
+/* 倾斜放在外层，跟内层的翻转分开，两个 transform 不会互相干扰 */
+.draw-card { transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1); }
+.draw-card.revealed { transform: rotate(var(--tilt, 0deg)); }
+
+.draw-card-face, .draw-card-back {
   position: absolute; inset: 0; backface-visibility: hidden;
-  background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
-  border-radius: var(--radius-lg); box-shadow: var(--shadow);
-  display: flex; align-items: center; justify-content: center; font-size: 38px;
+  border-radius: 22px; overflow: hidden; box-shadow: 0 12px 28px rgba(30, 20, 15, 0.22);
 }
+/* 正面先转过去背对着，翻到 180° 时刚好正对 */
+.draw-card-face { transform: rotateY(180deg); background: var(--card-bg); }
+.draw-face-photo {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+}
+.draw-face-photo.is-empty {
+  display: flex; align-items: center; justify-content: center; font-size: 64px;
+  background: linear-gradient(160deg, var(--coral-light) 0%, var(--cream, var(--card-bg)) 100%);
+}
+/* 底部压一层渐变，保证店名在任何照片上都读得清 */
+.draw-face-info {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 18px 18px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 100%);
+}
+.draw-face-name { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.25; }
+.draw-face-meta { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin-top: 5px; }
+
+.draw-card-back {
+  background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+  display: flex; align-items: center; justify-content: center; font-size: 56px;
+}
+/* 背面加一圈内描边，看着像牌背的花纹边 */
+.draw-card-back::after {
+  content: ""; position: absolute; inset: 12px; border-radius: 14px;
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+}
+/* 身后垫两张错位的牌，读起来是「从一副牌里抽」而不是孤零零一张 */
+.draw-deck-back { position: absolute; inset: 0; }
+.draw-deck-back::before, .draw-deck-back::after {
+  content: ""; position: absolute; inset: 0; border-radius: 22px;
+  background: var(--card-bg); box-shadow: 0 6px 16px rgba(30, 20, 15, 0.16);
+}
+.draw-deck-back::before { transform: rotate(-5deg) translateY(6px); }
+.draw-deck-back::after { transform: rotate(3.5deg) translateY(3px); }
+.draw-deck.multi .draw-deck-back { display: none; }
 @keyframes draw-shake {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   25% { transform: translateY(-7px) rotate(-2deg); }
