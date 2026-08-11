@@ -621,9 +621,18 @@ const Archive = (() => {
         // 高德偶尔会返回没有坐标的 POI。以前这里是静悄悄存成 location: null，
         // 等你认可之后才冒出一条「N 家认可餐厅没填坐标」，根本联系不到是这次导入造成的。
         const noCoords = checked.filter((cb) => !pois[Number(cb.dataset.idx)].location).length;
-        UI.toast(noCoords
-          ? `已加入 ${checked.length} 家到想去，其中 ${noCoords} 家高德没给坐标，之后要手动补`
-          : `已加入 ${checked.length} 家到想去`);
+
+        // 母店自己没地址的话，它的信息已经全部复制到分店上了，留着就是品牌里一条
+        // 永远定位不到的重复项，还会一直触发「没填坐标」提醒。
+        // 但去过的记录是它独有的，有到访次数就不动——那是真实吃过的凭证。
+        const fresh = await DB.Restaurants.get(r.id);
+        const dropParent = fresh && !fresh.location && !fresh.visitCount && checked.length > 0;
+        if (dropParent) await DB.Restaurants.remove(r.id);
+
+        let msg = `已加入 ${checked.length} 家到想去`;
+        if (noCoords) msg += `，其中 ${noCoords} 家高德没给坐标，之后要手动补`;
+        if (dropParent) msg += `；没有地址的「${fresh.name}」已清理`;
+        UI.toast(msg);
         UI.closeSheet();
         App.notifyDataChanged();
       };
