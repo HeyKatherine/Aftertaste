@@ -194,8 +194,51 @@ const Find = (() => {
   async function refresh() {
     ensureMap();
     const pool = await getPool();
+    // 图钉不合并：地图本来就是按位置看的，每家分店该各占一个点
     renderPins(pool.filter((r) => r.location));
-    await renderList(pool.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
+    await renderList(groupByBrand(pool).sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity)));
+  }
+
+  // 列表和抽卡都是"今天去哪家"的决策，同一个牌子按品牌出现一次就够了。
+  // 顺带修掉一个公平性问题：不合并的话，有 5 家分店的连锁在抽卡时被抽中的概率是别人的 5 倍。
+  function groupByBrand(pool) {
+    const groups = new Map();
+    const items = [];
+    for (const r of pool) {
+      if (!r.brand) { items.push(r); continue; }
+      if (!groups.has(r.brand)) {
+        const entry = { isBrand: true, brand: r.brand, branches: [] };
+        groups.set(r.brand, entry);
+        items.push(entry);
+      }
+      groups.get(r.brand).branches.push(r);
+    }
+    const shared = (branches, key) => {
+      for (const b of branches) {
+        const v = b[key];
+        if (Array.isArray(v) ? v.length : (v !== null && v !== undefined && v !== '')) return v;
+      }
+      return '';
+    };
+    return items.map((it) => {
+      if (!it.isBrand) return it;
+      if (it.branches.length === 1) return it.branches[0]; // 就一家的话没必要包一层
+      it.branches.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity));
+      const nearest = it.branches[0];
+      it.name = it.brand;
+      it._distance = nearest._distance; // 用最近那家的距离代表整个品牌
+      it.cuisine = shared(it.branches, 'cuisine');
+      it.myRating = shared(it.branches, 'myRating');
+      it.notes = shared(it.branches, 'notes');
+      it.photos = shared(it.branches, 'photos') || [];
+      it.status = it.branches.every((b) => b.status === 'wishlist') ? 'wishlist' : 'approved';
+      return it;
+    });
+  }
+
+  function openEntry(entry) {
+    if (entry.isBrand) Archive.openBrandDetail(entry.brand, entry.branches);
+    else Archive.openDetail(entry.id);
   }
 
   const RATING_COLOR = { '必回访': '#F26B57', '不错': '#E0B96B', '一般': '#9FDCC0' };
@@ -245,20 +288,26 @@ const Find = (() => {
         const photo = await DB.Photos.get(r.photos[0]);
         if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
       }
+      // 连锁店合并成一条，距离显示最近那家的，点进去再挑分店
+      const subtitle = [
+        r.cuisine,
+        r.isBrand ? `${r.branches.length} 家分店` : null,
+        r._distance != null ? `最近 ${Utils.formatDistance(r._distance)}` : null,
+      ].filter(Boolean).map(Utils.escapeHTML).join(' · ');
       const card = UI.el(`
         <div class="archive-card">
           <div class="card-top-row">
             ${thumbHTML}
             <div class="card-title-block">
-              <p class="card-title">${Utils.escapeHTML(r.name)}</p>
-              <p class="card-subtitle">${[r.cuisine, r._distance != null ? Utils.formatDistance(r._distance) : null].filter(Boolean).map(Utils.escapeHTML).join(' · ')}</p>
+              <p class="card-title">${r.isBrand ? '🏷️ ' : ''}${Utils.escapeHTML(r.name)}</p>
+              <p class="card-subtitle">${subtitle}</p>
             </div>
             ${isWishlist ? '<span class="tag">🔖 想去</span>' : (r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : ''))}
           </div>
           ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
         </div>
       `);
-      card.addEventListener('click', () => Archive.openDetail(r.id));
+      card.addEventListener('click', () => openEntry(r));
       listEl.appendChild(card);
     }
   }
@@ -266,7 +315,8 @@ const Find = (() => {
   const LOOKAHEAD = 3; // 同时挂在 DOM 里的牌数，够看出"下面还有"就行
 
   async function openPicker() {
-    const pool = await getPool();
+    // 按品牌合并后再抽，否则分店多的连锁会被超额抽到
+    const pool = groupByBrand(await getPool());
     if (!pool.length) { UI.toast('当前筛选下没有可选的店'); return; }
     await renderPickerModal(pool);
   }
@@ -277,17 +327,20 @@ const Find = (() => {
       const photo = await DB.Photos.get(r.photos[0]);
       if (photo) photoStyle = ` style="background-image:url(${URL.createObjectURL(photo.blob)})"`;
     }
-    const meta = [r.cuisine, r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
-      .filter(Boolean).map(Utils.escapeHTML).join(' · ');
+    const meta = [
+      r.cuisine, r.myRating,
+      r.isBrand ? `${r.branches.length} 家分店` : null,
+      r._distance != null ? `最近 ${Utils.formatDistance(r._distance)}` : null,
+    ].filter(Boolean).map(Utils.escapeHTML).join(' · ');
     // 每张给个几度的随机倾斜，像一沓随手摞起来的牌，而不是对齐的方块
     const tilt = (Math.random() * 5 - 2.5).toFixed(2);
     const card = UI.el(`
-      <div class="draw-card" data-id="${r.id}" style="--tilt:${tilt}deg;">
+      <div class="draw-card" style="--tilt:${tilt}deg;">
         <div class="draw-card-inner">
           <div class="draw-card-face">
             <div class="draw-face-photo${photoStyle ? '' : ' is-empty'}"${photoStyle}>${photoStyle ? '' : '🍽️'}</div>
             <div class="draw-face-info">
-              <p class="draw-face-name">${Utils.escapeHTML(r.name)}</p>
+              <p class="draw-face-name">${r.isBrand ? '🏷️ ' : ''}${Utils.escapeHTML(r.name)}</p>
               ${meta ? `<p class="draw-face-meta">${meta}</p>` : ''}
             </div>
           </div>
@@ -295,6 +348,7 @@ const Find = (() => {
         </div>
       </div>
     `);
+    card._entry = r; // 品牌条目没有 id，直接把整条挂在元素上
     return card;
   }
 
@@ -406,7 +460,7 @@ const Find = (() => {
           return;
         }
         UI.closeModal();
-        Archive.openDetail(card.dataset.id);
+        openEntry(card._entry);
       });
     }
 

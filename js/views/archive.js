@@ -679,5 +679,5 @@ const Archive = (() => {
     });
   }
 
-  return { init, renderList, openDetail, openMissingLocationList };
+  return { init, renderList, openDetail, openBrandDetail, openMissingLocationList };
 })();
