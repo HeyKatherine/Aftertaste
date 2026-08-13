@@ -15,6 +15,17 @@ const UI = (() => {
     return tpl.content.firstElementChild;
   }
 
+  // 界面内的图标统一用内联 SVG：emoji 各平台渲染不一样，粗细/颜色也没法跟主题走
+  const ICON_PATHS = {
+    bowl: '<path d="M4.5 11.5h15a7.5 7.5 0 0 1-15 0Z"/><path d="M3.4 11.5h17.2"/><path d="M9.5 7.4V5.2M12 6.9V4.4M14.5 7.4V5.2"/>',
+    bookmark: '<path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-4.2L6 21V4.6Z"/>',
+    tag: '<path d="M11.6 3H5.4A2.4 2.4 0 0 0 3 5.4v6.2a2 2 0 0 0 .6 1.4l7.4 7.4a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8L13 3.6A2 2 0 0 0 11.6 3Z"/><circle cx="7.9" cy="7.9" r="1.3"/>',
+    pin: '<path d="M20 10c0 4.4-5.6 10.3-7.4 12.1a.85.85 0 0 1-1.2 0C9.6 20.3 4 14.4 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.8"/>',
+  };
+  function icon(name) {
+    return `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name] || ICON_PATHS.bowl}</svg>`;
+  }
+
   const sheetRoot = () => document.getElementById('sheet-root');
   const modalRoot = () => document.getElementById('modal-root');
 
@@ -241,7 +252,7 @@ const UI = (() => {
   }
 
   return {
-    toast, el, openSheet, closeSheet, openModal, closeModal, confirmDialog,
+    toast, el, icon, openSheet, closeSheet, openModal, closeModal, confirmDialog,
     openPhotoViewer, closePhotoViewer,
     createPhotoPicker, createLinkList, renderLinkIcon,
   };

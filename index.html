@@ -207,17 +207,19 @@
 </main>
 
 <nav id="bottom-nav" class="bottom-nav">
+  <!-- 内联 SVG 而不是 emoji：统一描边粗细，颜色跟着 currentColor 走，
+       选中态和深色模式就不用再靠 grayscale/opacity 那种障眼法了 -->
   <button class="nav-btn active" data-view="find">
-    <span class="nav-icon">📍</span><span class="nav-label">找店</span>
+    <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.4-5.6 10.3-7.4 12.1a.85.85 0 0 1-1.2 0C9.6 20.3 4 14.4 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.8"/></svg></span><span class="nav-label">找店</span>
   </button>
   <button class="nav-btn" data-view="wantgo">
-    <span class="nav-icon">🔖</span><span class="nav-label">想去</span>
+    <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-4.2L6 21V4.6Z"/></svg></span><span class="nav-label">想去</span>
   </button>
   <button class="nav-btn" data-view="archive">
-    <span class="nav-icon">✅</span><span class="nav-label">档案</span>
+    <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11.5h15a7.5 7.5 0 0 1-15 0Z"/><path d="M3.4 11.5h17.2"/><path d="M9.5 7.4V5.2M12 6.9V4.4M14.5 7.4V5.2"/></svg></span><span class="nav-label">档案</span>
   </button>
   <button class="nav-btn" data-view="settings">
-    <span class="nav-icon">⚙️</span><span class="nav-label">设置</span>
+    <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M18.9 14.2a1.3 1.3 0 0 0 .3 1.4l.1.1a1.6 1.6 0 1 1-2.3 2.3l-.1-.1a1.3 1.3 0 0 0-1.4-.3 1.3 1.3 0 0 0-.8 1.2v.3a1.6 1.6 0 1 1-3.2 0v-.2a1.3 1.3 0 0 0-.9-1.2 1.3 1.3 0 0 0-1.4.3l-.1.1a1.6 1.6 0 1 1-2.3-2.3l.1-.1a1.3 1.3 0 0 0 .3-1.4 1.3 1.3 0 0 0-1.2-.8h-.3a1.6 1.6 0 1 1 0-3.2h.2a1.3 1.3 0 0 0 1.2-.9 1.3 1.3 0 0 0-.3-1.4l-.1-.1a1.6 1.6 0 1 1 2.3-2.3l.1.1a1.3 1.3 0 0 0 1.4.3h.1a1.3 1.3 0 0 0 .8-1.2v-.3a1.6 1.6 0 1 1 3.2 0v.2a1.3 1.3 0 0 0 .8 1.2 1.3 1.3 0 0 0 1.4-.3l.1-.1a1.6 1.6 0 1 1 2.3 2.3l-.1.1a1.3 1.3 0 0 0-.3 1.4v.1a1.3 1.3 0 0 0 1.2.8h.3a1.6 1.6 0 1 1 0 3.2h-.2a1.3 1.3 0 0 0-1.2.8Z"/></svg></span><span class="nav-label">设置</span>
   </button>
 </nav>
 

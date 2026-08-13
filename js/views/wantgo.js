@@ -92,13 +92,13 @@ const WantGo = (() => {
 
   async function buildShopCard(shop, decayDays) {
     const isDecayed = Utils.daysSince(shop.addedAt) > decayDays;
-    let thumbHTML = '<div class="card-thumb-placeholder">🔖</div>';
+    let thumbHTML = `<div class="card-thumb-placeholder">${UI.icon('bookmark')}</div>`;
     if (shop.photos && shop.photos.length) {
       const photo = await DB.Photos.get(shop.photos[0]);
       if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
     }
     // 有菜系/品牌/地区就优先显示这些（跟认可档案卡片对齐），都没填就退回链接图标或存入日期
-    const infoParts = [shop.brand ? '🏷️ ' + shop.brand : null, shop.cuisine, shop.region].filter(Boolean);
+    const infoParts = [shop.brand, shop.cuisine, shop.region].filter(Boolean);
     const subtitle = infoParts.length
       ? infoParts.map(Utils.escapeHTML).join(' · ')
       : (shop.links && shop.links.length ? shop.links.map((l) => Utils.detectLinkSource(l.url).icon).join(' ') : '存入 ' + shop.addedAt);
@@ -143,18 +143,18 @@ const WantGo = (() => {
   }
 
   // 组内任意一家分店已经上传过照片的话，折叠卡片就用那张当封面，没有照片才退回品牌图标
-  async function pickGroupThumbHTML(branchList, fallbackEmoji) {
+  async function pickGroupThumbHTML(branchList, fallbackIcon) {
     for (const r of branchList) {
       if (r.photos && r.photos.length) {
         const photo = await DB.Photos.get(r.photos[0]);
         if (photo) return `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
       }
     }
-    return `<div class="card-thumb-placeholder">${fallbackEmoji}</div>`;
+    return `<div class="card-thumb-placeholder">${UI.icon(fallbackIcon)}</div>`;
   }
 
   async function buildShopGroupCard(brand, branchShops, decayDays) {
-    const thumbHTML = await pickGroupThumbHTML(branchShops, '🏷️');
+    const thumbHTML = await pickGroupThumbHTML(branchShops, 'tag');
     const group = UI.el(`
       <details class="shop-card shop-group">
         <summary class="card-top-row">

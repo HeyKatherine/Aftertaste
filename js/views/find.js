@@ -264,7 +264,7 @@ const Find = (() => {
       // 图片是异步取的，弹窗先用占位图标同步开出来，等 popupopen 时再补上真实照片
       marker.bindPopup(`
         <div class="map-popup-card" data-id="${r.id}">
-          <div class="card-thumb-placeholder map-popup-thumb">${isWishlist ? '🔖' : '🍽️'}</div>
+          <div class="card-thumb-placeholder map-popup-thumb">${UI.icon(isWishlist ? 'bookmark' : 'bowl')}</div>
           <div class="card-title-block">
             <p class="card-title">${Utils.escapeHTML(r.name)}</p>
             ${subtitle ? `<p class="card-subtitle">${subtitle}</p>` : ''}
@@ -285,7 +285,7 @@ const Find = (() => {
     }
     for (const r of restaurants) {
       const isWishlist = r.status === 'wishlist';
-      let thumbHTML = `<div class="card-thumb-placeholder">${isWishlist ? '🔖' : '🍽️'}</div>`;
+      let thumbHTML = `<div class="card-thumb-placeholder">${UI.icon(isWishlist ? 'bookmark' : 'bowl')}</div>`;
       if (r.photos && r.photos.length) {
         const photo = await DB.Photos.get(r.photos[0]);
         if (photo) thumbHTML = `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
@@ -301,7 +301,7 @@ const Find = (() => {
           <div class="card-top-row">
             ${thumbHTML}
             <div class="card-title-block">
-              <p class="card-title">${r.isBrand ? '🏷️ ' : ''}${Utils.escapeHTML(r.name)}</p>
+              <p class="card-title">${r.isBrand ? UI.icon('tag') : ''}${Utils.escapeHTML(r.name)}</p>
               <p class="card-subtitle">${subtitle}</p>
             </div>
             ${isWishlist ? '<span class="tag">🔖 想去</span>' : (r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : ''))}
@@ -342,7 +342,7 @@ const Find = (() => {
           <div class="draw-card-face">
             <div class="draw-face-photo${photoStyle ? '' : ' is-empty'}"${photoStyle}>${photoStyle ? '' : '🍽️'}</div>
             <div class="draw-face-info">
-              <p class="draw-face-name">${r.isBrand ? '🏷️ ' : ''}${Utils.escapeHTML(r.name)}</p>
+              <p class="draw-face-name">${r.isBrand ? UI.icon('tag') : ''}${Utils.escapeHTML(r.name)}</p>
               ${meta ? `<p class="draw-face-meta">${meta}</p>` : ''}
             </div>
           </div>

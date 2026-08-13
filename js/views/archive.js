@@ -85,14 +85,14 @@ const Archive = (() => {
   }
 
   // 组内任意一家分店已经上传过照片的话，折叠卡片就用那张当封面，没有照片才退回品牌图标
-  async function pickGroupThumbHTML(branchList, fallbackEmoji) {
+  async function pickGroupThumbHTML(branchList, fallbackIcon) {
     for (const r of branchList) {
       if (r.photos && r.photos.length) {
         const photo = await DB.Photos.get(r.photos[0]);
         if (photo) return `<img class="card-thumb" src="${URL.createObjectURL(photo.blob)}">`;
       }
     }
-    return `<div class="card-thumb-placeholder">${fallbackEmoji}</div>`;
+    return `<div class="card-thumb-placeholder">${UI.icon(fallbackIcon)}</div>`;
   }
 
   function updateFilterToggle() {
@@ -132,7 +132,7 @@ const Archive = (() => {
   }
 
   async function buildGroupCard(brand, branchList) {
-    const thumbHTML = await pickGroupThumbHTML(branchList, '🏷️');
+    const thumbHTML = await pickGroupThumbHTML(branchList, 'tag');
     const cuisine = sharedField(branchList, 'cuisine');
     const rating = sharedField(branchList, 'myRating');
     const notes = sharedField(branchList, 'notes');
@@ -145,7 +145,7 @@ const Archive = (() => {
         <div class="card-top-row">
           ${thumbHTML}
           <div class="card-title-block">
-            <p class="card-title">🏷️ ${Utils.escapeHTML(brand)}</p>
+            <p class="card-title">${UI.icon('tag')}${Utils.escapeHTML(brand)}</p>
             <p class="card-subtitle">${subtitle}</p>
           </div>
           ${rating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (rating ? `<span class="tag tag-rating">${Utils.escapeHTML(rating)}</span>` : '')}
@@ -158,7 +158,7 @@ const Archive = (() => {
   }
 
   async function buildCard(r) {
-    let thumbHTML = '<div class="card-thumb-placeholder">🍽️</div>';
+    let thumbHTML = `<div class="card-thumb-placeholder">${UI.icon('bowl')}</div>`;
     if (r.photos && r.photos.length) {
       const photo = await DB.Photos.get(r.photos[0]);
       if (photo) {
@@ -166,7 +166,7 @@ const Archive = (() => {
         thumbHTML = `<img class="card-thumb" src="${url}">`;
       }
     }
-    const subtitleParts = [r.brand ? '🏷️ ' + r.brand : null, r.cuisine, r.region];
+    const subtitleParts = [r.brand, r.cuisine, r.region];
     if (r.visitCount) subtitleParts.push(`去过 ${r.visitCount} 次`);
     const card = UI.el(`
       <div class="archive-card">
@@ -277,7 +277,7 @@ const Archive = (() => {
       <div class="tag-row" style="margin-bottom:14px;">
         ${isWishlist ? '<span class="tag">🔖 想去</span>' : ''}
         ${r.myRating ? `<span class="tag ${r.myRating === '必回访' ? 'tag-must' : 'tag-rating'}">${Utils.escapeHTML(r.myRating)}</span>` : ''}
-        ${r.brand ? `<span class="tag">🏷️ ${Utils.escapeHTML(r.brand)}</span>` : ''}
+        ${r.brand ? `<span class="tag">${UI.icon('tag')}${Utils.escapeHTML(r.brand)}</span>` : ''}
         ${(r.tags || []).map((t) => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
       </div>
       <div class="detail-field"><label>菜系</label><div class="value">${Utils.escapeHTML(r.cuisine || '—')}</div></div>
@@ -395,7 +395,7 @@ const Archive = (() => {
     `).join('');
 
     const sheet = UI.openSheet(`
-      <div class="sheet-header"><h2>🏷️ ${Utils.escapeHTML(brand)}</h2><button class="sheet-close">✕</button></div>
+      <div class="sheet-header"><h2>${UI.icon('tag')}${Utils.escapeHTML(brand)}</h2><button class="sheet-close">✕</button></div>
       ${photosHTML}
       <div class="tag-row" style="margin-bottom:14px;">
         ${rating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (rating ? `<span class="tag tag-rating">${Utils.escapeHTML(rating)}</span>` : '')}
@@ -660,7 +660,7 @@ const Archive = (() => {
       const row = UI.el(`
         <div class="shop-card">
           <div class="card-top-row">
-            <div class="card-thumb-placeholder">📍</div>
+            <div class="card-thumb-placeholder">${UI.icon('pin')}</div>
             <div class="card-title-block">
               <p class="card-title">${Utils.escapeHTML(r.name)}</p>
               <p class="card-subtitle">${Utils.escapeHTML(r.region || '')}</p>
