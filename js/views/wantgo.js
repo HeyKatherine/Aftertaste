@@ -101,7 +101,7 @@ const WantGo = (() => {
     const infoParts = [shop.brand, shop.cuisine, shop.region].filter(Boolean);
     const subtitle = infoParts.length
       ? infoParts.map(Utils.escapeHTML).join(' · ')
-      : (shop.links && shop.links.length ? shop.links.map((l) => Utils.detectLinkSource(l.url).icon).join(' ') : '存入 ' + shop.addedAt);
+      : (shop.links && shop.links.length ? `${shop.links.length} 个链接` : '存入 ' + shop.addedAt);
     const card = UI.el(`
       <div class="shop-card ${isDecayed ? 'decayed' : ''}">
         <div class="card-top-row">
@@ -114,9 +114,9 @@ const WantGo = (() => {
         </div>
         ${shop.notes ? `<p class="card-note">${Utils.escapeHTML(shop.notes)}</p>` : ''}
         <div class="card-actions">
-          <button class="btn btn-primary btn-approve">认可 ✅</button>
+          <button class="btn btn-primary btn-approve">${UI.icon('check')}认可</button>
           <button class="btn btn-ghost btn-edit">编辑</button>
-          <button class="btn btn-ghost btn-drop">拔草 ❌</button>
+          <button class="btn btn-ghost btn-drop">${UI.icon('close')}拔草</button>
         </div>
       </div>
     `);
@@ -365,15 +365,15 @@ const WantGo = (() => {
       const isDecayed = Utils.daysSince(wish.createdAt) > decayDays;
       const linkedRest = wish.linkedRestaurantId ? restMap.get(wish.linkedRestaurantId) : null;
       let linkedHTML = '';
-      if (linkedRest) linkedHTML = `<p class="wish-linked">🔗 关联店铺：${Utils.escapeHTML(linkedRest.name)}</p>`;
-      else if (wish.externalLink) linkedHTML = `<p class="wish-linked">${Utils.detectLinkSource(wish.externalLink).icon} 附带外部链接</p>`;
+      if (linkedRest) linkedHTML = `<p class="wish-linked">${UI.icon('link')}关联店铺：${Utils.escapeHTML(linkedRest.name)}</p>`;
+      else if (wish.externalLink) linkedHTML = `<p class="wish-linked">${UI.icon('link')}附带外部链接</p>`;
 
       const card = UI.el(`
         <div class="wish-card ${isDecayed ? 'decayed' : ''}">
           <p class="wish-content">${Utils.escapeHTML(wish.content)}</p>
           ${linkedHTML}
           <div class="card-actions">
-            <button class="btn btn-secondary btn-link">🔗 关联</button>
+            <button class="btn btn-secondary btn-link">${UI.icon('link')}关联</button>
             <button class="btn btn-primary btn-done">吃到了</button>
             <button class="btn btn-ghost btn-dropwish">不想吃了</button>
           </div>
@@ -445,7 +445,7 @@ const WantGo = (() => {
       const matches = f ? restaurants.filter((r) => r.name.toLowerCase().includes(f)) : restaurants.slice(0, 8);
       resultsEl.innerHTML = matches.map((r) => `
         <div class="link-row" data-id="${r.id}" style="cursor:pointer;">
-          <span style="flex:1;">${r.status === 'approved' ? '✅' : '🔖'} ${Utils.escapeHTML(r.name)}</span>
+          <span style="flex:1;">${UI.icon(r.status === 'approved' ? 'check' : 'bookmark')}${Utils.escapeHTML(r.name)}</span>
         </div>
       `).join('') || '<p class="form-hint">没有匹配的店</p>';
       resultsEl.querySelectorAll('.link-row').forEach((row) => {

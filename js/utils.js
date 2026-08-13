@@ -88,18 +88,18 @@ const Utils = (() => {
 
   // ---------- 链接来源识别 ----------
   const LINK_SOURCES = [
-    { key: 'dianping', icon: '🔴', label: '大众点评', match: /dianping\.com/i },
-    { key: 'meituan', icon: '🟡', label: '美团', match: /meituan\.com/i },
-    { key: 'xiaohongshu', icon: '📕', label: '小红书', match: /(xiaohongshu\.com|xhslink\.com)/i },
-    { key: 'google', icon: '🗺️', label: 'Google Maps', match: /(google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i },
-    { key: 'yelp', icon: '⭐', label: 'Yelp', match: /yelp\.com/i },
-    { key: 'amap', icon: '🧭', label: '高德地图', match: /(amap\.com|autonavi\.com)/i },
+    { key: 'dianping', label: '大众点评', match: /dianping\.com/i },
+    { key: 'meituan', label: '美团', match: /meituan\.com/i },
+    { key: 'xiaohongshu', label: '小红书', match: /(xiaohongshu\.com|xhslink\.com)/i },
+    { key: 'google', label: 'Google Maps', match: /(google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i },
+    { key: 'yelp', label: 'Yelp', match: /yelp\.com/i },
+    { key: 'amap', label: '高德地图', match: /(amap\.com|autonavi\.com)/i },
   ];
   function detectLinkSource(url) {
     for (const s of LINK_SOURCES) {
-      if (s.match.test(url)) return { key: s.key, icon: s.icon, label: s.label };
+      if (s.match.test(url)) return { key: s.key, label: s.label };
     }
-    return { key: 'other', icon: '🔗', label: '链接' };
+    return { key: 'other', label: '链接' };
   }
 
   // 补全协议头：没有 http(s):// 前缀的链接当 <a href> 用会被当成本站内的相对路径，

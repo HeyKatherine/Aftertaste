@@ -178,7 +178,7 @@ const Archive = (() => {
           </div>
           <div class="card-side">
             ${r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : '')}
-            <button type="button" class="btn-checkin">✓ 打卡</button>
+            <button type="button" class="btn-checkin">${UI.icon('check')}打卡</button>
           </div>
         </div>
         ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
@@ -241,9 +241,9 @@ const Archive = (() => {
           <label>导航</label>
           <div class="external-links">
             <a class="external-link-btn" id="nav-baidu" href="${baiduUrl}"
-               data-scheme="${Utils.escapeHTML(baiduScheme)}" target="_blank" rel="noopener">🧭 百度地图</a>
-            <a class="external-link-btn" href="${amapUrl}" target="_blank" rel="noopener">🧭 高德地图</a>
-            <a class="external-link-btn" href="${googleUrl}" target="_blank" rel="noopener">🌍 Google 地图</a>
+               data-scheme="${Utils.escapeHTML(baiduScheme)}" target="_blank" rel="noopener">${UI.icon('compass')}百度地图</a>
+            <a class="external-link-btn" href="${amapUrl}" target="_blank" rel="noopener">${UI.icon('compass')}高德地图</a>
+            <a class="external-link-btn" href="${googleUrl}" target="_blank" rel="noopener">${UI.icon('globe')}Google 地图</a>
           </div>
         </div>
       `;
@@ -265,7 +265,7 @@ const Archive = (() => {
         `;
       }
       brandActionsHTML = `
-        <button type="button" class="btn btn-secondary btn-full" id="detail-amap-search">🔍 高德搜索同品牌分店</button>
+        <button type="button" class="btn btn-secondary btn-full" id="detail-amap-search">${UI.icon('search')}高德搜索同品牌分店</button>
       `;
     }
 
@@ -275,7 +275,7 @@ const Archive = (() => {
       ${photosHTML}
       ${wishHint}
       <div class="tag-row" style="margin-bottom:14px;">
-        ${isWishlist ? '<span class="tag">🔖 想去</span>' : ''}
+        ${isWishlist ? `<span class="tag">${UI.icon('bookmark')}想去</span>` : ''}
         ${r.myRating ? `<span class="tag ${r.myRating === '必回访' ? 'tag-must' : 'tag-rating'}">${Utils.escapeHTML(r.myRating)}</span>` : ''}
         ${r.brand ? `<span class="tag">${UI.icon('tag')}${Utils.escapeHTML(r.brand)}</span>` : ''}
         ${(r.tags || []).map((t) => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
@@ -292,8 +292,8 @@ const Archive = (() => {
       ${brandActionsHTML}
       <div class="modal-actions" style="margin-top:16px;">
         ${isWishlist
-          ? '<button type="button" class="btn btn-primary btn-full" id="detail-approve" style="flex:1;">认可 ✅</button>'
-          : '<button type="button" class="btn btn-accent btn-full" id="detail-visited" style="flex:1;">今天去了 🎉</button>'}
+          ? `<button type="button" class="btn btn-primary btn-full" id="detail-approve" style="flex:1;">${UI.icon('check')}认可</button>`
+          : `<button type="button" class="btn btn-accent btn-full" id="detail-visited" style="flex:1;">${UI.icon('check')}今天去了</button>`}
       </div>
       <div class="modal-actions" style="margin-top:10px;">
         <button type="button" class="btn btn-ghost" id="detail-edit">编辑</button>
@@ -387,7 +387,7 @@ const Archive = (() => {
     const branchRowsHTML = sortBranches(branchList).map((r) => `
       <div class="link-row" data-branch-id="${r.id}" style="cursor:pointer; align-items:flex-start;">
         <span style="flex:1;">
-          <b>${Utils.escapeHTML(r.name)}</b>${!r.location ? ' <span class="form-hint">⚠️ 没坐标</span>' : ''}<br>
+          <b>${Utils.escapeHTML(r.name)}</b>${!r.location ? ` <span class="form-hint">${UI.icon('warn')}没坐标</span>` : ''}<br>
           <span class="form-hint">${[r.region, r.visitCount ? `去过 ${r.visitCount} 次` : null]
             .filter(Boolean).map(Utils.escapeHTML).join(' · ') || '点开可以补地址、导航、打卡'}</span>
         </span>
@@ -581,7 +581,7 @@ const Archive = (() => {
             <label class="link-row" style="align-items:flex-start; ${existingNames.has(p.name) ? 'opacity:0.5;' : ''}">
               <input type="checkbox" data-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
               <span style="flex:1;">
-                <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}${!p.location ? ' <span class="form-hint">⚠️ 无坐标</span>' : ''}<br>
+                <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在）</span>' : ''}${!p.location ? ` <span class="form-hint">${UI.icon('warn')}无坐标</span>` : ''}<br>
                 <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
               </span>
             </label>

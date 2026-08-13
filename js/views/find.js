@@ -146,12 +146,12 @@ const Find = (() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         btn.disabled = false;
-        btn.textContent = '📍 已定位';
+        btn.innerHTML = `${UI.icon('pin')}已定位`;
         setReferenceLocation(pos.coords.latitude, pos.coords.longitude, '我在这里', '#3B82F6', '#60A5FA');
       },
       (err) => {
         btn.disabled = false;
-        btn.textContent = '📍 获取我的位置';
+        btn.innerHTML = `${UI.icon('pin')}获取我的位置`;
         UI.toast('定位失败：' + err.message);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -259,7 +259,7 @@ const Find = (() => {
         radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: isWishlist ? 0.75 : 0.95,
         bubblingMouseEvents: false, // 点图钉不应该同时把这里设成新的参考位置
       }).addTo(map);
-      const subtitle = [isWishlist ? '🔖 想去' : r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
+      const subtitle = [isWishlist ? '想去' : r.myRating, r._distance != null ? Utils.formatDistance(r._distance) : null]
         .filter(Boolean).map(Utils.escapeHTML).join(' · ');
       // 图片是异步取的，弹窗先用占位图标同步开出来，等 popupopen 时再补上真实照片
       marker.bindPopup(`
@@ -304,7 +304,7 @@ const Find = (() => {
               <p class="card-title">${r.isBrand ? UI.icon('tag') : ''}${Utils.escapeHTML(r.name)}</p>
               <p class="card-subtitle">${subtitle}</p>
             </div>
-            ${isWishlist ? '<span class="tag">🔖 想去</span>' : (r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : ''))}
+            ${isWishlist ? `<span class="tag">${UI.icon('bookmark')}想去</span>` : (r.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (r.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(r.myRating)}</span>` : ''))}
           </div>
           ${r.notes ? `<p class="card-note">${Utils.escapeHTML(r.notes)}</p>` : ''}
         </div>
@@ -346,7 +346,7 @@ const Find = (() => {
               ${meta ? `<p class="draw-face-meta">${meta}</p>` : ''}
             </div>
           </div>
-          <div class="draw-card-back"><span>🎲</span></div>
+          <div class="draw-card-back">${UI.icon('dice')}</div>
         </div>
       </div>
     `);
@@ -361,7 +361,7 @@ const Find = (() => {
 
     const box = UI.openModal(`
       <button type="button" class="sheet-close picker-close" id="picker-close" aria-label="关闭">✕</button>
-      <h2 class="picker-title">🎲 帮你选了这家</h2>
+      <h2 class="picker-title">${UI.icon('dice')}帮你选了这家</h2>
       <div class="draw-stack" id="draw-stack"></div>
       <p class="draw-hint" id="draw-hint">${single ? '就这一家了' : '← 左右划走，换下一家 →'}</p>
       <div class="modal-actions" style="margin-top:10px;">

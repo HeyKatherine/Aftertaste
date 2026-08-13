@@ -31,7 +31,7 @@
     </header>
 
     <div class="find-controls">
-      <button id="btn-locate" class="btn btn-primary btn-locate">📍 获取我的位置</button>
+      <button id="btn-locate" class="btn btn-primary btn-locate"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.4-5.6 10.3-7.4 12.1a.85.85 0 0 1-1.2 0C9.6 20.3 4 14.4 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.8"/></svg>获取我的位置</button>
       <div class="segmented" id="find-view-toggle">
         <button class="segmented-btn active" data-mode="map">地图</button>
         <button class="segmented-btn" data-mode="list">列表</button>
@@ -54,7 +54,7 @@
         <option value="0">不限</option>
       </select>
       <button id="btn-filter-toggle" class="btn btn-ghost btn-small">筛选 ▾</button>
-      <button id="btn-pick-random" class="btn btn-accent btn-small">🎲 帮我选</button>
+      <button id="btn-pick-random" class="btn btn-accent btn-small"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>帮我选</button>
     </div>
 
     <div id="find-filter-panel" class="filter-panel hidden"></div>
@@ -70,8 +70,8 @@
     </header>
 
     <div class="segmented" id="wantgo-toggle">
-      <button class="segmented-btn active" data-sub="shops">🔖 店</button>
-      <button class="segmented-btn" data-sub="wishes">🍜 馋</button>
+      <button class="segmented-btn active" data-sub="shops"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-4.2L6 21V4.6Z"/></svg>店</button>
+      <button class="segmented-btn" data-sub="wishes"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5h15a7.5 7.5 0 0 1-15 0Z"/><path d="M3.4 12.5h17.2"/><path d="m14.5 9-6-5.4M17 9.6l-4.6-4.2"/></svg>馋</button>
     </div>
 
     <!-- 店分区 -->
@@ -83,7 +83,7 @@
       <div id="shop-decay-banner" class="decay-banner hidden"></div>
       <div id="wantgo-shops-list" class="card-list"></div>
       <div id="wantgo-shops-empty" class="empty-state hidden">
-        <p>还没有想去的店 🔖</p>
+        <p>还没有想去的店</p>
         <p class="empty-sub">看到种草的店，先存下来</p>
       </div>
     </div>
@@ -97,7 +97,7 @@
       <div id="wish-decay-banner" class="decay-banner hidden"></div>
       <div id="wantgo-wishes-list" class="card-list"></div>
       <div id="wantgo-wishes-empty" class="empty-state hidden">
-        <p>还没有馋的东西 🍜</p>
+        <p>还没有馋的东西</p>
         <p class="empty-sub">馋一口，先记一句</p>
       </div>
     </div>
@@ -115,11 +115,11 @@
     <div id="archive-filter-panel" class="filter-panel hidden"></div>
     <div id="archive-list" class="card-list"></div>
     <div id="archive-empty" class="empty-state hidden">
-      <p>档案还是空的 ✅</p>
+      <p>档案还是空的</p>
       <p class="empty-sub">去「想去」里认可几家店吧</p>
     </div>
     <div id="archive-no-match" class="empty-state hidden">
-      <p>没有匹配的店 🔍</p>
+      <p>没有匹配的店</p>
       <p class="empty-sub">换个关键词，或看看筛选条件是不是太窄了</p>
     </div>
   </section>

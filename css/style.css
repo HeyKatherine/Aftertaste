@@ -190,10 +190,18 @@ input, select { font-family: inherit; }
   stroke-linecap: round; stroke-linejoin: round;
 }
 /* 跟文字排在一起时缩小并对齐基线 */
-.card-title .ui-icon, .sheet-header h2 .ui-icon, .tag .ui-icon {
+.card-title .ui-icon, .sheet-header h2 .ui-icon, .tag .ui-icon,
+.btn .ui-icon, .btn-checkin .ui-icon, .external-link-btn .ui-icon,
+.segmented-btn .ui-icon, .wish-linked .ui-icon, .form-hint .ui-icon,
+.link-icon .ui-icon, .picker-title .ui-icon, #amap-status .ui-icon {
   width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; stroke-width: 2;
 }
 .tag .ui-icon { width: 13px; height: 13px; margin-right: 3px; }
+.btn-checkin .ui-icon, .form-hint .ui-icon { width: 13px; height: 13px; margin-right: 3px; }
+/* 抽卡背面那个骰子是主视觉，要大 */
+.draw-card-back .ui-icon { width: 56px; height: 56px; margin: 0; stroke-width: 1.4; color: #fff; }
+/* 照片选择器的相机按钮 */
+.photo-add-btn .ui-icon { width: 26px; height: 26px; margin: 0; }
 .card-title-block { flex: 1; min-width: 0; }
 /* 评级标签和打卡按钮竖向叠在卡片右侧，省横向空间给店名 */
 .card-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }

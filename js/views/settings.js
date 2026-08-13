@@ -25,7 +25,7 @@ const Settings = (() => {
   }
 
   function updateAmapStatus(configured) {
-    document.getElementById('amap-status').textContent = configured ? '✅ 已配置' : '尚未配置';
+    document.getElementById('amap-status').innerHTML = configured ? `${UI.icon('check')}已配置` : '尚未配置';
   }
 
   function init() {

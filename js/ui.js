@@ -21,6 +21,16 @@ const UI = (() => {
     bookmark: '<path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-4.2L6 21V4.6Z"/>',
     tag: '<path d="M11.6 3H5.4A2.4 2.4 0 0 0 3 5.4v6.2a2 2 0 0 0 .6 1.4l7.4 7.4a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8L13 3.6A2 2 0 0 0 11.6 3Z"/><circle cx="7.9" cy="7.9" r="1.3"/>',
     pin: '<path d="M20 10c0 4.4-5.6 10.3-7.4 12.1a.85.85 0 0 1-1.2 0C9.6 20.3 4 14.4 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.8"/>',
+    dice: '<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>',
+    camera: '<path d="M3 8.8A1.8 1.8 0 0 1 4.8 7h2.3l1.3-2.1a1 1 0 0 1 .85-.48h5.5a1 1 0 0 1 .85.48L16.9 7h2.3A1.8 1.8 0 0 1 21 8.8v9.4A1.8 1.8 0 0 1 19.2 20H4.8A1.8 1.8 0 0 1 3 18.2Z"/><circle cx="12" cy="13.2" r="3.6"/>',
+    search: '<circle cx="10.8" cy="10.8" r="6.8"/><path d="M15.8 15.8 21 21"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="m15.6 8.4-2 5.2-5.2 2 2-5.2Z"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3.2 12h17.6"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
+    check: '<path d="m4.5 12.8 4.8 4.7L19.5 6.8"/>',
+    close: '<path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8"/>',
+    link: '<path d="M10.3 13.7a3.8 3.8 0 0 0 5.6.3l2.5-2.5a3.8 3.8 0 1 0-5.4-5.4l-1.4 1.4"/><path d="M13.7 10.3a3.8 3.8 0 0 0-5.6-.3l-2.5 2.5a3.8 3.8 0 1 0 5.4 5.4l1.4-1.4"/>',
+    noodle: '<path d="M4.5 12.5h15a7.5 7.5 0 0 1-15 0Z"/><path d="M3.4 12.5h17.2"/><path d="m14.5 9-6-5.4M17 9.6l-4.6-4.2"/>',
+    warn: '<path d="M10.7 4.2 2.9 17.6A1.5 1.5 0 0 0 4.2 20h15.6a1.5 1.5 0 0 0 1.3-2.4L13.3 4.2a1.5 1.5 0 0 0-2.6 0Z"/><path d="M12 9.5v4.2"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>',
   };
   function icon(name) {
     return `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name] || ICON_PATHS.bowl}</svg>`;
@@ -181,7 +191,7 @@ const UI = (() => {
         };
         container.appendChild(wrap);
       }
-      const addBtn = el('<button type="button" class="photo-add-btn">📷</button>');
+      const addBtn = el(`<button type="button" class="photo-add-btn">${icon('camera')}</button>`);
       const input = el('<input type="file" accept="image/*" multiple hidden>');
       addBtn.onclick = () => input.click();
       input.onchange = async () => {
@@ -221,7 +231,7 @@ const UI = (() => {
         const src = Utils.detectLinkSource(link.url);
         const row = el(`
           <div class="link-row">
-            <span class="link-icon">${src.icon}</span>
+            <span class="link-icon">${icon('link')}</span>
             <span class="link-url">${Utils.escapeHTML(link.url)}</span>
             <button type="button" class="link-remove">✕</button>
           </div>
@@ -248,7 +258,7 @@ const UI = (() => {
 
   function renderLinkIcon(link) {
     const src = Utils.detectLinkSource(link.url);
-    return `<a class="external-link-btn" href="${Utils.escapeHTML(link.url)}" target="_blank" rel="noopener">${src.icon} ${src.label}</a>`;
+    return `<a class="external-link-btn" href="${Utils.escapeHTML(link.url)}" target="_blank" rel="noopener">${icon('link')}${src.label}</a>`;
   }
 
   return {

@@ -69,8 +69,8 @@ const RestaurantForm = (() => {
             <span style="font-size:13px;color:var(--text-secondary);">坐标来自国内平台（大众点评/高德）</span>
             <label class="switch"><input type="checkbox" id="rf-gcj02"><span class="switch-track"></span></label>
           </div>
-          <button type="button" id="rf-use-location" class="btn btn-ghost btn-small">📍 用当前定位</button>
-          <button type="button" id="rf-amap-search-toggle" class="btn btn-ghost btn-small">🔍 高德搜索地址</button>
+          <button type="button" id="rf-use-location" class="btn btn-ghost btn-small">${UI.icon('pin')}用当前定位</button>
+          <button type="button" id="rf-amap-search-toggle" class="btn btn-ghost btn-small">${UI.icon('search')}高德搜索地址</button>
           <div id="rf-amap-panel" class="hidden" style="margin-top:10px;">
             <div class="quick-add-row" style="margin-bottom:8px;">
               <input type="text" id="rf-amap-keyword" placeholder="店名" value="${Utils.escapeHTML(initial.name || '')}">
@@ -189,7 +189,7 @@ const RestaurantForm = (() => {
           <div class="link-row" style="align-items:flex-start;">
             <input type="checkbox" data-bulk-idx="${i}" ${existingNames.has(p.name) ? 'disabled' : ''} style="margin-top:4px;">
             <span style="flex:1; cursor:pointer;" data-pick-idx="${i}">
-              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在，仍可点击选用坐标）</span>' : ''}${!p.location ? ' <span class="form-hint">⚠️ 无坐标</span>' : ''}<br>
+              <b>${Utils.escapeHTML(p.name)}</b>${existingNames.has(p.name) ? ' <span class="form-hint">（已存在，仍可点击选用坐标）</span>' : ''}${!p.location ? ` <span class="form-hint">${UI.icon('warn')}无坐标</span>` : ''}<br>
               <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>
             </span>
           </div>
