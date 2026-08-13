@@ -165,13 +165,15 @@ const Find = (() => {
 
     const panel = document.getElementById('find-filter-panel');
     if (!filterPanelBuilt) {
-      // 找店按距离筛，城市已经被「范围」隐含了；品牌是逛档案时的维度，这里不需要
+      // 品牌是逛档案时的维度，这里不需要（连锁已经按品牌合并了）。
+      // 城市要留着：帮我选可以不设参考位置直接抽，那时范围筛选不生效，
+      // 池子是所有城市的店——人在上海却抽到东京那家就没意义了。
       const { getState } = Filters.createPanel(panel, relevant, (state) => {
         filterState = state;
         updateFilterToggle();
         refresh();
       }, {
-        groups: ['cuisine', 'scene', 'rating', 'price'],
+        groups: ['cuisine', 'scene', 'rating', 'city', 'price'],
         onClose: () => { panel.classList.add('hidden'); updateFilterToggle(); },
       });
       filterPanelBuilt = true;
