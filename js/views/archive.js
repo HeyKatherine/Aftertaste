@@ -13,6 +13,22 @@ const Archive = (() => {
       searchQuery = e.target.value.trim().toLowerCase();
       renderList();
     });
+    document.getElementById('btn-archive-add').addEventListener('click', openAddVisitedSheet);
+  }
+
+  // 已经吃过的店直接进档案。以前档案没有添加入口，这种店只能先存进「想去」
+  // 再认可一次——而认可打开的又是同一张表单，等于把填好的东西再确认一遍。
+  function openAddVisitedSheet() {
+    RestaurantForm.open({
+      initial: {},
+      title: '记一家去过的店',
+      submitLabel: '存入档案',
+      onSubmit: async (patch) => {
+        await DB.Restaurants.create({ ...patch, status: 'approved' });
+        UI.toast('已存入档案');
+        App.notifyDataChanged();
+      },
+    });
   }
 
   async function renderList() {

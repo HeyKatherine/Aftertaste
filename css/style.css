@@ -64,6 +64,7 @@ input, select { font-family: inherit; }
   padding: calc(env(safe-area-inset-top) + 20px) 0 12px;
 }
 .page-header h1 { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
 
 /* ============ 底部导航 ============ */
 .bottom-nav {
