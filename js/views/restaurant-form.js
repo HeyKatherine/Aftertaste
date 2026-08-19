@@ -145,19 +145,20 @@ const RestaurantForm = (() => {
     });
 
     // 城市能从坐标反查出来就别让人手填。已经填了的不覆盖——那可能是特意改过的。
+    // 传进来的是 WGS-84，高德只认 GCJ-02，这里负责转换。
     async function fillRegionFromCoords(lat, lng) {
       const regionInput = sheet.querySelector('#rf-region');
-      if (regionInput.value.trim()) return;
+      if (regionInput.value.trim()) return '';
       try {
-        if (!(await AMapService.isConfigured())) return;
+        if (!(await AMapService.isConfigured())) return '';
         const gcj = Utils.wgs84ToGcj02(lng, lat);
         const geo = await AMapService.reverseGeocode(gcj.lng, gcj.lat);
-        if (geo && geo.city) {
-          regionInput.value = geo.city;
-          UI.toast(`已获取当前位置 · ${geo.city}`);
-        }
+        const city = (geo && geo.city) || '';
+        if (city) regionInput.value = city;
+        return city;
       } catch (e) {
-        console.warn('反查城市失败', e); // 定位已经成功了，这里失败不打扰用户
+        console.warn('反查城市失败', e); // 坐标已经拿到了，这里失败不该打扰用户
+        return '';
       }
     }
 
@@ -167,10 +168,10 @@ const RestaurantForm = (() => {
         sheet.querySelector('#rf-lat').value = pos.lat.toFixed(6);
         sheet.querySelector('#rf-lng').value = pos.lng.toFixed(6);
         sheet.querySelector('#rf-gcj02').checked = false;
-        UI.toast('已获取当前位置');
         // 顺手把城市反查出来，省得每次手填。没配高德或查不到就安静跳过，
         // 定位本身已经成功了，不该因为反查失败显得像出错。
-        await fillRegionFromCoords(pos.lat, pos.lng);
+        const city = await fillRegionFromCoords(pos.lat, pos.lng);
+        UI.toast(city ? `已获取当前位置 · ${city}` : '已获取当前位置');
       } catch (e) {
         UI.toast('定位失败：' + e.message);
       }
@@ -223,7 +224,11 @@ const RestaurantForm = (() => {
             sheet.querySelector('#rf-lng').value = wgs84.lng.toFixed(6);
             sheet.querySelector('#rf-gcj02').checked = false;
             const regionInput = sheet.querySelector('#rf-region');
-            if (!regionInput.value.trim() && p.city) regionInput.value = p.city;
+            // 高德的搜索结果不一定带城市字段，带了就直接用，没带就按坐标反查兜底
+            if (!regionInput.value.trim()) {
+              if (p.city) regionInput.value = p.city;
+              else fillRegionFromCoords(wgs84.lat, wgs84.lng); // 不 await，别拖慢选坐标的反馈
+            }
             amapPanel.classList.add('hidden');
             UI.toast(`已选择「${p.name}」的坐标`);
           };

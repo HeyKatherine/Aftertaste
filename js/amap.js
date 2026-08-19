@@ -69,7 +69,8 @@ const AMapService = (() => {
             id: p.id,
             name: p.name,
             address: p.address,
-            city: p.cityname || p.pname || '',
+            // 统一在这里简化成「上海」「广州」，下游拿到的就是短名
+            city: Utils.shortCityName(p.cityname || p.pname || ''),
             district: p.adname || '',
             tel: p.tel || '',
             location: toLngLat(p.location), // GCJ-02，导入时需转换为 WGS-84
@@ -92,7 +93,7 @@ const AMapService = (() => {
           resolve({
             // 直辖市（北京/上海/天津/重庆）的 city 是空字符串，城市名在 province 里，
             // 不兜底的话上海会反查成空。
-            city: c.city || c.province || '',
+            city: Utils.shortCityName(c.city || c.province || ''),
             district: c.district || '',
             address: result.regeocode.formattedAddress || '',
           });

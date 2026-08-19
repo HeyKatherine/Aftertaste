@@ -83,6 +83,16 @@ const Utils = (() => {
     return { lng: lng + dLng, lat: lat + dLat };
   }
 
+  // 高德返回的是「上海市」「广州市」这种全称，存进城市字段太长。
+  // 只砍 省/市/特别行政区 这几个后缀——自治州、地区之类砍了就不成词了，
+  // 砍完不足两个字也保持原样（避免出现单字城市）。
+  function shortCityName(name) {
+    if (!name) return '';
+    const s = String(name).trim();
+    const stripped = s.replace(/特别行政区$/, '').replace(/[省市]$/, '');
+    return stripped.length >= 2 ? stripped : s;
+  }
+
   // ---------- Haversine 距离（米）----------
   function haversineDistance(lat1, lng1, lat2, lng2) {
     const R = 6371000;
@@ -207,7 +217,7 @@ const Utils = (() => {
 
   return {
     uuid, todayISO, daysSince, formatMonthsAgo,
-    gcj02ToWgs84, wgs84ToGcj02, haversineDistance, formatDistance,
+    gcj02ToWgs84, wgs84ToGcj02, shortCityName, haversineDistance, formatDistance,
     detectLinkSource, LINK_SOURCES, normalizeUrl,
     compressImage, blobToDataURL, formatBytes, escapeHTML, openMapApp,
   };
