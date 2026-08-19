@@ -144,6 +144,23 @@ const RestaurantForm = (() => {
       else selectedScenes.delete(chip.dataset.value);
     });
 
+    // 城市能从坐标反查出来就别让人手填。已经填了的不覆盖——那可能是特意改过的。
+    async function fillRegionFromCoords(lat, lng) {
+      const regionInput = sheet.querySelector('#rf-region');
+      if (regionInput.value.trim()) return;
+      try {
+        if (!(await AMapService.isConfigured())) return;
+        const gcj = Utils.wgs84ToGcj02(lng, lat);
+        const geo = await AMapService.reverseGeocode(gcj.lng, gcj.lat);
+        if (geo && geo.city) {
+          regionInput.value = geo.city;
+          UI.toast(`已获取当前位置 · ${geo.city}`);
+        }
+      } catch (e) {
+        console.warn('反查城市失败', e); // 定位已经成功了，这里失败不打扰用户
+      }
+    }
+
     sheet.querySelector('#rf-use-location').onclick = async () => {
       try {
         const pos = await getCurrentPosition();
@@ -151,6 +168,9 @@ const RestaurantForm = (() => {
         sheet.querySelector('#rf-lng').value = pos.lng.toFixed(6);
         sheet.querySelector('#rf-gcj02').checked = false;
         UI.toast('已获取当前位置');
+        // 顺手把城市反查出来，省得每次手填。没配高德或查不到就安静跳过，
+        // 定位本身已经成功了，不该因为反查失败显得像出错。
+        await fillRegionFromCoords(pos.lat, pos.lng);
       } catch (e) {
         UI.toast('定位失败：' + e.message);
       }

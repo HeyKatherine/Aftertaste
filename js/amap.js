@@ -80,5 +80,26 @@ const AMapService = (() => {
     });
   }
 
-  return { getConfig, saveConfig, isConfigured, searchPOI };
+  // 由坐标反查城市。传进来的必须是 GCJ-02。
+  async function reverseGeocode(lng, lat) {
+    const AMap = await ensureLoaded();
+    return new Promise((resolve) => {
+      AMap.plugin('AMap.Geocoder', () => {
+        const geocoder = new AMap.Geocoder();
+        geocoder.getAddress([lng, lat], (status, result) => {
+          if (status !== 'complete' || !result || !result.regeocode) { resolve(null); return; }
+          const c = result.regeocode.addressComponent || {};
+          resolve({
+            // 直辖市（北京/上海/天津/重庆）的 city 是空字符串，城市名在 province 里，
+            // 不兜底的话上海会反查成空。
+            city: c.city || c.province || '',
+            district: c.district || '',
+            address: result.regeocode.formattedAddress || '',
+          });
+        });
+      });
+    });
+  }
+
+  return { getConfig, saveConfig, isConfigured, searchPOI, reverseGeocode };
 })();

@@ -68,6 +68,21 @@ const Utils = (() => {
     return { lng: lng * 2 - mgLng, lat: lat * 2 - mgLat };
   }
 
+  // 反向：WGS-84 → GCJ-02。GPS 拿到的是 WGS-84，但高德接口只认 GCJ-02，
+  // 不转直接查会偏出几百米，可能落到隔壁区。
+  function wgs84ToGcj02(lng, lat) {
+    if (outOfChina(lng, lat)) return { lng, lat };
+    let dLat = transformLat(lng - 105.0, lat - 35.0);
+    let dLng = transformLng(lng - 105.0, lat - 35.0);
+    const radLat = (lat / 180.0) * PI;
+    let magic = Math.sin(radLat);
+    magic = 1 - EE * magic * magic;
+    const sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat * 180.0) / (((A * (1 - EE)) / (magic * sqrtMagic)) * PI);
+    dLng = (dLng * 180.0) / ((A / sqrtMagic) * Math.cos(radLat) * PI);
+    return { lng: lng + dLng, lat: lat + dLat };
+  }
+
   // ---------- Haversine 距离（米）----------
   function haversineDistance(lat1, lng1, lat2, lng2) {
     const R = 6371000;
@@ -192,7 +207,7 @@ const Utils = (() => {
 
   return {
     uuid, todayISO, daysSince, formatMonthsAgo,
-    gcj02ToWgs84, haversineDistance, formatDistance,
+    gcj02ToWgs84, wgs84ToGcj02, haversineDistance, formatDistance,
     detectLinkSource, LINK_SOURCES, normalizeUrl,
     compressImage, blobToDataURL, formatBytes, escapeHTML, openMapApp,
   };
