@@ -99,10 +99,19 @@ const Find = (() => {
   function ensureMap() {
     if (map) return;
     map = L.map('find-map', { zoomControl: true, attributionControl: true }).setView([31.23, 121.47], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // 标准 OSM 那套配色是给导航用的——黄色路面、密集 POI 标注，放在这个界面里又旧又杂。
+    // 换成 Esri 的浅灰极简底图：只留路网和水系，干净得多，且不需要 Key。
+    // 注意 ArcGIS 的瓦片路径是 {z}/{y}/{x}，跟常见的 {z}/{x}/{y} 反着，写错会满屏错位。
+    // 底图不含文字，路名/区名在单独的 Reference 图层，叠上来才能判断方位。
+    const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const esri = (service) =>
+      `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/${service}/MapServer/tile/{z}/{y}/{x}`;
+    const tone = darkMode ? 'Dark' : 'Light';
+    L.tileLayer(esri(`World_${tone}_Gray_Base`), {
       maxZoom: 19,
-      attribution: '© OpenStreetMap',
+      attribution: '© OpenStreetMap · Tiles © Esri',
     }).addTo(map);
+    L.tileLayer(esri(`World_${tone}_Gray_Reference`), { maxZoom: 19, pane: 'overlayPane' }).addTo(map);
     // 点击地图任意位置即可把该点设为参考位置，不依赖 GPS
     map.on('click', (e) => {
       setReferenceLocation(e.latlng.lat, e.latlng.lng, '参考位置', '#8B5CF6', '#C4B5FD');
