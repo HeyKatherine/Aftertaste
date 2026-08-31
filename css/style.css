@@ -93,7 +93,9 @@ input, select { font-family: inherit; }
   flex: 1 1 0; display: flex; flex-direction: row; align-items: center; justify-content: center;
   gap: 6px; background: none; border: none; color: var(--text-faint);
   font-size: 13px; font-weight: 700; padding: 0; cursor: pointer;
-  margin: 8px 3px; border-radius: var(--radius-pill);
+  /* 不留上下内缩：选中胶囊撑满 dock 高度，两者半径都是「高度的一半」，
+     选中项落在最左/最右时圆角正好跟 dock 两端重合 */
+  margin: 0; border-radius: var(--radius-pill);
   transition: flex-grow 0.32s cubic-bezier(0.34, 1.25, 0.64, 1), background 0.25s ease, color 0.25s ease;
 }
 .nav-btn.active { flex-grow: 2.2; background: var(--coral-light); }
