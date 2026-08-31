@@ -6,6 +6,14 @@ const App = (() => {
     activeView = view;
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('hidden', v.id !== `view-${view}`));
+    // 底栏指示器滑到对应位置，主体内容跟着淡入上移——切换有个过渡才不像硬切
+    document.getElementById('bottom-nav').dataset.active = view;
+    const active = document.getElementById(`view-${view}`);
+    if (active) {
+      active.classList.remove('view-enter');
+      void active.offsetWidth; // 强制重排，否则连着切同一个 class 不会重播动画
+      active.classList.add('view-enter');
+    }
 
     if (view === 'wantgo' && subTab) {
       const btn = document.querySelector(`#wantgo-toggle [data-sub="${subTab}"]`);

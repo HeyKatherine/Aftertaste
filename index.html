@@ -36,26 +36,19 @@
     <div class="find-controls">
       <button id="btn-locate" class="btn btn-primary btn-locate"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.4-5.6 10.3-7.4 12.1a.85.85 0 0 1-1.2 0C9.6 20.3 4 14.4 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.8"/></svg>获取我的位置</button>
       <div class="segmented" id="find-view-toggle">
-        <button class="segmented-btn active" data-mode="map">地图</button>
-        <button class="segmented-btn" data-mode="list">列表</button>
+        <button class="segmented-btn active icon-only" data-mode="map" aria-label="地图" title="地图"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.2 3.6 6.4A1 1 0 0 0 3 7.3v12a.7.7 0 0 0 1 .65L9 17.8"/><path d="m9 4.2 6 2.6"/><path d="M15 6.8l5-2.15a.7.7 0 0 1 1 .65v12a1 1 0 0 1-.6.9L15 20.2"/><path d="M9 4.2v13.6M15 6.8v13.4"/></svg></button>
+        <button class="segmented-btn icon-only" data-mode="list" aria-label="列表" title="列表"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.2h11.5M9 12h11.5M9 17.8h11.5"/><circle cx="4.2" cy="6.2" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.2" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.2" cy="17.8" r="1.3" fill="currentColor" stroke="none"/></svg></button>
       </div>
     </div>
     <div class="quick-add-row" style="margin-bottom:6px;">
       <input type="text" id="find-address-input" placeholder="输入地址，搜索并设为参考位置">
-      <button type="button" class="btn btn-secondary" id="find-address-search">搜索</button>
+      <button type="button" class="btn btn-secondary btn-circle" id="find-address-search" aria-label="搜索" title="搜索"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="M15.8 15.8 21 21"/></svg></button>
     </div>
     <div id="find-address-results" class="link-list hidden"></div>
     <p class="form-hint" style="margin: -2px 0 10px;">或直接点击地图任意位置，把那里设为参考位置</p>
 
     <div class="range-slider-row">
-      <label for="range-slider">范围</label>
-      <select id="range-slider" class="range-select">
-        <option value="500">500m</option>
-        <option value="1000" selected>1km</option>
-        <option value="3000">3km</option>
-        <option value="5000">5km</option>
-        <option value="0">不限</option>
-      </select>
+      <button id="btn-range" class="btn btn-ghost btn-small">1km ▾</button>
       <button id="btn-filter-toggle" class="btn btn-ghost btn-small">筛选 ▾</button>
       <button id="btn-pick-random" class="btn btn-accent btn-small"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>帮我选</button>
     </div>
@@ -221,7 +214,8 @@
 
 </main>
 
-<nav id="bottom-nav" class="bottom-nav">
+<nav id="bottom-nav" class="bottom-nav" data-active="find">
+  <div class="nav-indicator"></div>
   <!-- 内联 SVG 而不是 emoji：统一描边粗细，颜色跟着 currentColor 走，
        选中态和深色模式就不用再靠 grayscale/opacity 那种障眼法了 -->
   <button class="nav-btn active" data-view="find">

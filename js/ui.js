@@ -31,6 +31,9 @@ const UI = (() => {
     link: '<path d="M10.3 13.7a3.8 3.8 0 0 0 5.6.3l2.5-2.5a3.8 3.8 0 1 0-5.4-5.4l-1.4 1.4"/><path d="M13.7 10.3a3.8 3.8 0 0 0-5.6-.3l-2.5 2.5a3.8 3.8 0 1 0 5.4 5.4l1.4-1.4"/>',
     noodle: '<path d="M4.5 12.5h15a7.5 7.5 0 0 1-15 0Z"/><path d="M3.4 12.5h17.2"/><path d="m14.5 9-6-5.4M17 9.6l-4.6-4.2"/>',
     warn: '<path d="M10.7 4.2 2.9 17.6A1.5 1.5 0 0 0 4.2 20h15.6a1.5 1.5 0 0 0 1.3-2.4L13.3 4.2a1.5 1.5 0 0 0-2.6 0Z"/><path d="M12 9.5v4.2"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>',
+    map: '<path d="M9 4.2 3.6 6.4A1 1 0 0 0 3 7.3v12a.7.7 0 0 0 1 .65L9 17.8"/><path d="m9 4.2 6 2.6"/><path d="M15 6.8l5-2.15a.7.7 0 0 1 1 .65v12a1 1 0 0 1-.6.9L15 20.2"/><path d="M9 4.2v13.6M15 6.8v13.4"/>',
+    list: '<path d="M9 6.2h11.5M9 12h11.5M9 17.8h11.5"/><circle cx="4.2" cy="6.2" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.2" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.2" cy="17.8" r="1.3" fill="currentColor" stroke="none"/>',
+    pencil: '<path d="M16.4 4.6a2.1 2.1 0 0 1 3 3L9.1 17.9l-4 1 1-4Z"/><path d="m14.6 6.4 3 3"/>',
   };
   function icon(name) {
     return `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name] || ICON_PATHS.bowl}</svg>`;

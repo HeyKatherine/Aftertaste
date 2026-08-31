@@ -114,9 +114,9 @@ const WantGo = (() => {
         </div>
         ${shop.notes ? `<p class="card-note">${Utils.escapeHTML(shop.notes)}</p>` : ''}
         <div class="card-actions">
-          <button class="btn btn-primary btn-approve">${UI.icon('check')}认可</button>
-          <button class="btn btn-ghost btn-edit">编辑</button>
-          <button class="btn btn-ghost btn-drop">${UI.icon('close')}拔草</button>
+          <button class="btn btn-primary btn-circle btn-approve" aria-label="认可" title="认可">${UI.icon('check')}</button>
+          <button class="btn btn-ghost btn-circle btn-edit" aria-label="编辑" title="编辑">${UI.icon('pencil')}</button>
+          <button class="btn btn-ghost btn-circle btn-drop" aria-label="拔草" title="拔草">${UI.icon('close')}</button>
         </div>
       </div>
     `);

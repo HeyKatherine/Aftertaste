@@ -20,10 +20,7 @@ const Find = (() => {
       viewMode = btn.dataset.mode;
       applyViewMode();
     });
-    document.getElementById('range-slider').addEventListener('change', (e) => {
-      rangeMeters = Number(e.target.value);
-      refresh();
-    });
+    document.getElementById('btn-range').addEventListener('click', openRangePicker);
     document.getElementById('btn-filter-toggle').addEventListener('click', () => {
       document.getElementById('find-filter-panel').classList.toggle('hidden');
       updateFilterToggle();
@@ -80,6 +77,40 @@ const Find = (() => {
     } catch (e) {
       resultsEl.innerHTML = `<p class="form-hint">${Utils.escapeHTML(e.message)}</p>`;
     }
+  }
+
+  // 原生 <select> 样式改不动，跟旁边的胶囊按钮怎么排都不齐，换成点开弹层选
+  const RANGE_OPTIONS = [
+    { value: 500, label: '500m' },
+    { value: 1000, label: '1km' },
+    { value: 3000, label: '3km' },
+    { value: 5000, label: '5km' },
+    { value: 0, label: '不限' },
+  ];
+
+  function openRangePicker() {
+    const box = UI.openModal(`
+      <h2 class="picker-title">看多远以内</h2>
+      <div class="chip-select-row" id="range-options" style="justify-content:center;">
+        ${RANGE_OPTIONS.map((o) => `<span class="chip-select${o.value === rangeMeters ? ' active' : ''}" data-value="${o.value}">${o.label}</span>`).join('')}
+      </div>
+    `);
+    box.classList.add('picker-box');
+    box.querySelectorAll('#range-options .chip-select').forEach((chip) => {
+      chip.onclick = () => {
+        rangeMeters = Number(chip.dataset.value);
+        updateRangeLabel();
+        UI.closeModal();
+        refresh();
+      };
+    });
+    const backdrop = box.parentElement;
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) UI.closeModal(); });
+  }
+
+  function updateRangeLabel() {
+    const opt = RANGE_OPTIONS.find((o) => o.value === rangeMeters);
+    document.getElementById('btn-range').textContent = `${opt ? opt.label : '1km'} ▾`;
   }
 
   // 按钮上带箭头方向和生效条件数，不展开也知道现在筛没筛

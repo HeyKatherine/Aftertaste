@@ -50,7 +50,8 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: contain;
 }
-body { padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 8px); }
+/* dock 是悬浮的，比通栏多占 10px，内容要多留出这段否则会被压住 */
+body { padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 26px); }
 h1, h2, h3, p { margin: 0; }
 button { font-family: inherit; }
 input, select { font-family: inherit; }
@@ -72,15 +73,34 @@ input, select { font-family: inherit; }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 4px; }
 
 /* ============ 底部导航 ============ */
+/* 离边悬浮的圆角 dock，而不是贴底的通栏 */
 .bottom-nav {
-  position: fixed; left: 0; right: 0; bottom: 0;
-  height: calc(var(--nav-height) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  width: calc(100% - 32px); max-width: 420px;
+  height: var(--nav-height);
   background: var(--card-bg);
-  border-top: 1px solid var(--border);
-  display: flex;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 28px rgba(120, 80, 60, 0.16);
+  display: flex; align-items: stretch;
   z-index: 100;
 }
+/* 选中态是一个会滑过去的胶囊，位置由 data-active 决定 */
+/* 宽度正好是 1/4，translateX(N*100%) 才能跟每个 tab 严丝合缝对齐。
+   左右各留 6px 透明边框 + background-clip 把可见胶囊内缩，
+   这样既保持 25% 的定位宽度，看上去又是有间距的。 */
+.nav-indicator {
+  position: absolute; top: 8px; bottom: 8px; left: 0; width: 25%;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  background: var(--coral-light); background-clip: padding-box;
+  border-radius: var(--radius-pill);
+  transition: transform 0.32s cubic-bezier(0.34, 1.3, 0.64, 1);
+  pointer-events: none;
+}
+.bottom-nav[data-active="wantgo"] .nav-indicator { transform: translateX(100%); }
+.bottom-nav[data-active="archive"] .nav-indicator { transform: translateX(200%); }
+.bottom-nav[data-active="settings"] .nav-indicator { transform: translateX(300%); }
+@media (prefers-reduced-motion: reduce) { .nav-indicator { transition: none; } }
 .nav-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; background: none; border: none; color: var(--text-faint);
@@ -102,7 +122,17 @@ input, select { font-family: inherit; }
   background: var(--coral-dark); margin-top: 3px; opacity: 0;
   transition: opacity 0.18s ease;
 }
-.nav-btn.active::after { opacity: 1; }
+/* 指示器已经代表选中态了，小圆点撤掉，免得两套东西说同一件事 */
+.nav-btn::after { display: none; }
+.nav-btn { position: relative; z-index: 1; }
+
+/* 切 tab 时主体内容淡入上移 */
+@keyframes view-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.view-enter { animation: view-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) { .view-enter { animation: none; } }
 
 /* ============ 按钮 ============ */
 /* 全圆角胶囊，跟参考图一致 */
@@ -235,6 +265,15 @@ input, select { font-family: inherit; }
 }
 .card-actions .btn .ui-icon { margin-right: 2px; }
 
+/* 纯图标按钮做成正圆：跟胶囊混排时宽度不一致，正是参考图那种节奏 */
+.btn-circle {
+  width: 46px; height: 46px; min-height: 46px; padding: 0; flex: 0 0 auto; border-radius: 50%;
+}
+.btn-circle .ui-icon { width: 19px; height: 19px; margin: 0; }
+.card-actions .btn-circle { flex: 0 0 46px; width: 46px; padding: 0; }
+.segmented-btn.icon-only { padding: 10px 18px; }
+.segmented-btn.icon-only .ui-icon { width: 19px; height: 19px; margin: 0; vertical-align: middle; }
+
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--coral-light); color: var(--coral-dark); }
 .tag-rating { background: var(--cream); color: #5A4626; }
@@ -270,11 +309,6 @@ input, select { font-family: inherit; }
 /* ============ 找店 tab ============ */
 .find-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
 .range-slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.range-slider-row label { font-size: 13px; color: var(--text-secondary); }
-.range-select {
-  border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 10px;
-  font-size: 13px; background: var(--card-bg); color: var(--text);
-}
 .find-map {
   width: 100%; height: 46vh; min-height: 300px; border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: var(--shadow); background: var(--coral-light);
