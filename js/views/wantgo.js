@@ -102,30 +102,105 @@ const WantGo = (() => {
     const subtitle = infoParts.length
       ? infoParts.map(Utils.escapeHTML).join(' · ')
       : (shop.links && shop.links.length ? `${shop.links.length} 个链接` : '存入 ' + shop.addedAt);
-    const card = UI.el(`
-      <div class="shop-card ${isDecayed ? 'decayed' : ''}">
-        <div class="card-top-row">
-          ${thumbHTML}
-          <div class="card-title-block">
-            <p class="card-title">${Utils.escapeHTML(shop.name)}</p>
-            <p class="card-subtitle">${subtitle}</p>
-          </div>
-          ${shop.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (shop.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(shop.myRating)}</span>` : '')}
+    // 认可/拔草藏在左右滑动后面：卡片正面只留常驻的「编辑」，不再挂一排按钮。
+    // 藏起来之后反而放得下图标+文字，比三个光秃秃的圆图标好认。
+    const wrap = UI.el(`
+      <div class="swipe-wrap">
+        <div class="swipe-actions swipe-actions-left">
+          <button type="button" class="swipe-btn swipe-approve">${UI.icon('check')}<span>认可</span></button>
         </div>
-        ${shop.notes ? `<p class="card-note">${Utils.escapeHTML(shop.notes)}</p>` : ''}
-        <div class="card-actions">
-          <button class="btn btn-primary btn-circle btn-approve" aria-label="认可" title="认可">${UI.icon('check')}</button>
-          <button class="btn btn-ghost btn-circle btn-edit" aria-label="编辑" title="编辑">${UI.icon('pencil')}</button>
-          <button class="btn btn-ghost btn-circle btn-drop" aria-label="拔草" title="拔草">${UI.icon('close')}</button>
+        <div class="swipe-actions swipe-actions-right">
+          <button type="button" class="swipe-btn swipe-drop">${UI.icon('close')}<span>拔草</span></button>
+        </div>
+        <div class="shop-card swipe-card ${isDecayed ? 'decayed' : ''}">
+          <div class="card-top-row">
+            ${thumbHTML}
+            <div class="card-title-block">
+              <p class="card-title">${Utils.escapeHTML(shop.name)}</p>
+              <p class="card-subtitle">${subtitle}</p>
+            </div>
+            ${shop.myRating === '必回访' ? '<span class="tag tag-must">必回访</span>' : (shop.myRating ? `<span class="tag tag-rating">${Utils.escapeHTML(shop.myRating)}</span>` : '')}
+            <button type="button" class="btn btn-ghost btn-circle btn-edit" aria-label="编辑" title="编辑">${UI.icon('pencil')}</button>
+          </div>
+          ${shop.notes ? `<p class="card-note">${Utils.escapeHTML(shop.notes)}</p>` : ''}
         </div>
       </div>
     `);
-    // 卡片本身点开详情，跟档案卡片一致；三个按钮各自的动作不该顺带把详情弹出来
-    card.querySelector('.btn-approve').onclick = (e) => { e.stopPropagation(); openApproveSheet(shop); };
+    const card = wrap.querySelector('.swipe-card');
     card.querySelector('.btn-edit').onclick = (e) => { e.stopPropagation(); openEditShopSheet(shop); };
-    card.querySelector('.btn-drop').onclick = (e) => { e.stopPropagation(); dropShop(shop); };
-    card.addEventListener('click', () => Archive.openDetail(shop.id));
-    return card;
+    wrap.querySelector('.swipe-approve').onclick = (e) => { e.stopPropagation(); openApproveSheet(shop); };
+    wrap.querySelector('.swipe-drop').onclick = (e) => { e.stopPropagation(); dropShop(shop); };
+    attachSwipeActions(wrap, card, () => Archive.openDetail(shop.id));
+    return wrap;
+  }
+
+  // 左右拖动露出两端的按钮；松手要么吸附到展开，要么弹回去。
+  // 露出来之后不直接执行动作——拔草是不可逆的，多一次点击更稳妥。
+  const SWIPE_W = 92;
+  let openSwipe = null; // 同时只允许一张展开，否则列表会很乱
+
+  function closeSwipe(el) {
+    if (!el) return;
+    el.style.transform = '';
+    el.classList.remove('swiped');
+    if (openSwipe === el) openSwipe = null;
+  }
+
+  function attachSwipeActions(wrap, card, onTap) {
+    let x0 = 0, y0 = 0, dx = 0, dragging = false, locked = false, moved = false;
+    let base = 0;        // 起手时已经展开的位移
+    let wasOpen = false; // 这一下手势开始时是不是展开着的
+
+    card.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      dragging = true; locked = false; moved = false; dx = 0;
+      wasOpen = card.classList.contains('swiped');
+      base = wasOpen
+        ? (parseFloat(card.style.transform.replace(/[^-\d.]/g, '')) || 0) : 0;
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      card.style.transition = 'none';
+    }, { passive: true });
+
+    card.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const ddx = e.touches[0].clientX - x0;
+      const ddy = e.touches[0].clientY - y0;
+      if (!locked) {
+        // 竖着划是要滚列表，别抢
+        if (Math.abs(ddy) > Math.abs(ddx) && Math.abs(ddy) > 8) { dragging = false; return; }
+        if (Math.abs(ddx) > 8) locked = true; else return;
+      }
+      e.preventDefault();
+      moved = true;
+      dx = Math.max(-SWIPE_W, Math.min(SWIPE_W, base + ddx));
+      card.style.transform = `translateX(${dx}px)`;
+    }, { passive: false });
+
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      card.style.transition = '';
+      if (Math.abs(dx) > SWIPE_W / 2) {
+        if (openSwipe && openSwipe !== card) closeSwipe(openSwipe);
+        card.style.transform = `translateX(${dx > 0 ? SWIPE_W : -SWIPE_W}px)`;
+        card.classList.add('swiped');
+        openSwipe = card;
+      } else {
+        closeSwipe(card);
+      }
+    };
+    card.addEventListener('touchend', end);
+    card.addEventListener('touchcancel', end);
+
+    card.addEventListener('click', () => {
+      if (moved) { moved = false; wasOpen = false; return; } // 刚划过，不算点击
+      // 展开着的时候点一下只收回。注意 touchend 已经把它收回了（没拖动 → 走收回分支），
+      // 所以这里不能只看当前 class，得看手势开始时的状态，否则会顺带把详情也打开。
+      if (wasOpen || card.classList.contains('swiped')) {
+        closeSwipe(card); wasOpen = false; return;
+      }
+      onTap();
+    });
   }
 
   // ---------- 编辑想去里的店（补充地址/链接等资料，不改变「未认可」状态） ----------

@@ -83,28 +83,27 @@ input, select { font-family: inherit; }
   border-radius: var(--radius-pill);
   box-shadow: 0 8px 28px rgba(120, 80, 60, 0.16);
   display: flex; align-items: stretch;
-  z-index: 100;
+  /* Leaflet 内部图层最高到 1000，且不受地图容器的层叠上下文约束，
+     所以要盖住地图必须超过 1000。dock 再压在筛选面板之上。 */
+  z-index: 1200;
 }
-/* 选中态是一个会滑过去的胶囊，位置由 data-active 决定 */
-/* 宽度正好是 1/4，translateX(N*100%) 才能跟每个 tab 严丝合缝对齐。
-   左右各留 6px 透明边框 + background-clip 把可见胶囊内缩，
-   这样既保持 25% 的定位宽度，看上去又是有间距的。 */
-.nav-indicator {
-  position: absolute; top: 8px; bottom: 8px; left: 0; width: 25%;
-  border-left: 6px solid transparent; border-right: 6px solid transparent;
-  background: var(--coral-light); background-clip: padding-box;
-  border-radius: var(--radius-pill);
-  transition: transform 0.32s cubic-bezier(0.34, 1.3, 0.64, 1);
-  pointer-events: none;
-}
-.bottom-nav[data-active="wantgo"] .nav-indicator { transform: translateX(100%); }
-.bottom-nav[data-active="archive"] .nav-indicator { transform: translateX(200%); }
-.bottom-nav[data-active="settings"] .nav-indicator { transform: translateX(300%); }
-@media (prefers-reduced-motion: reduce) { .nav-indicator { transition: none; } }
+/* 未选中只有图标，选中的那个展开成胶囊并显示文字——四个都带文字会挤成四坨，
+   而且选中态套个圆角矩形显得笨重。让宽度本身承担选中态更利落。 */
 .nav-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2px; background: none; border: none; color: var(--text-faint);
-  font-size: 11px; padding: 6px 0; cursor: pointer;
+  flex: 1 1 0; display: flex; flex-direction: row; align-items: center; justify-content: center;
+  gap: 6px; background: none; border: none; color: var(--text-faint);
+  font-size: 13px; font-weight: 700; padding: 0; cursor: pointer;
+  margin: 8px 3px; border-radius: var(--radius-pill);
+  transition: flex-grow 0.32s cubic-bezier(0.34, 1.25, 0.64, 1), background 0.25s ease, color 0.25s ease;
+}
+.nav-btn.active { flex-grow: 2.2; background: var(--coral-light); }
+.nav-label {
+  max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap;
+  transition: max-width 0.32s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.22s ease;
+}
+.nav-btn.active .nav-label { max-width: 60px; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-btn, .nav-label { transition: none; }
 }
 .nav-icon { display: flex; line-height: 0; transition: transform 0.18s ease; }
 .nav-icon svg {
@@ -114,7 +113,7 @@ input, select { font-family: inherit; }
 }
 .nav-btn.active { color: var(--coral-dark); font-weight: 700; }
 /* 选中的那个描粗一点，比单纯放大更像"实心态" */
-.nav-btn.active .nav-icon { transform: translateY(-1px); }
+.nav-btn.active .nav-icon { transform: none; }
 .nav-btn.active .nav-icon svg { stroke-width: 2.1; }
 /* 参考图底栏那个小圆点指示器 */
 .nav-btn::after {
@@ -594,3 +593,37 @@ input, select { font-family: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+
+/* 找店的筛选面板浮在地图上，而不是把地图往下推。
+   不设 top/left 就沿用它在文档流里的静态位置，正好落在筛选按钮下方。 */
+#find-filter-panel.filter-panel {
+  position: absolute; left: 0; right: 0; z-index: 1100;
+  max-height: 62vh; overflow-y: auto; overscroll-behavior: contain;
+  box-shadow: 0 14px 36px rgba(120, 80, 60, 0.20);
+}
+#view-find { position: relative; }
+
+/* ============ 想去卡片的滑动操作 ============ */
+.swipe-wrap { position: relative; }
+/* 按钮垫在卡片下面，卡片移开才露出来 */
+.swipe-actions {
+  position: absolute; top: 0; bottom: 0; width: 92px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-lg);
+}
+.swipe-actions-left { left: 0; background: var(--coral); }
+.swipe-actions-right { right: 0; background: var(--danger); }
+.swipe-btn {
+  background: none; border: none; cursor: pointer; color: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 700; width: 100%; height: 100%;
+  justify-content: center;
+}
+.swipe-btn .ui-icon { width: 22px; height: 22px; margin: 0; }
+.swipe-card {
+  position: relative; z-index: 1;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  touch-action: pan-y; /* 横向留给划动，纵向照常滚列表 */
+}
+.swipe-card .btn-edit { flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) { .swipe-card { transition: none; } }
