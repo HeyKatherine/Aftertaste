@@ -595,13 +595,14 @@ input, select { font-family: inherit; }
 
 
 /* 找店的筛选面板浮在地图上，而不是把地图往下推。
-   不设 top/left 就沿用它在文档流里的静态位置，正好落在筛选按钮下方。 */
+   用 fixed 而不是 absolute：absolute 会跟着页面滚，位置和可用高度都会失效；
+   而且它脱离文档流不撑高页面，滚不动 = 被 dock 盖住的部分永远够不着。
+   具体的 top / left / width / max-height 由 JS 按当前布局算（见 sizeFilterPanel）。 */
 #find-filter-panel.filter-panel {
-  position: absolute; left: 0; right: 0; z-index: 1100;
-  max-height: 62vh; overflow-y: auto; overscroll-behavior: contain;
+  position: fixed; z-index: 1100;
+  overflow-y: auto; overscroll-behavior: contain;
   box-shadow: 0 14px 36px rgba(120, 80, 60, 0.20);
 }
-#view-find { position: relative; }
 
 /* ============ 想去卡片的滑动操作 ============ */
 .swipe-wrap { position: relative; }

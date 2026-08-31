@@ -22,8 +22,15 @@ const Find = (() => {
     });
     document.getElementById('btn-range').addEventListener('click', openRangePicker);
     document.getElementById('btn-filter-toggle').addEventListener('click', () => {
-      document.getElementById('find-filter-panel').classList.toggle('hidden');
+      const panel = document.getElementById('find-filter-panel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) sizeFilterPanel();
       updateFilterToggle();
+    });
+    // 转屏或窗口变化时重算，否则高度会停在旧布局上
+    window.addEventListener('resize', () => {
+      const panel = document.getElementById('find-filter-panel');
+      if (panel && !panel.classList.contains('hidden')) sizeFilterPanel();
     });
     document.getElementById('btn-pick-random').addEventListener('click', () => openPicker());
 
@@ -77,6 +84,24 @@ const Find = (() => {
     } catch (e) {
       resultsEl.innerHTML = `<p class="form-hint">${Utils.escapeHTML(e.message)}</p>`;
     }
+  }
+
+  // 面板是 fixed 的，位置和高度得按当前布局现算：
+  // 上边贴着筛选按钮那一行，下边停在 dock 上方，中间放不下就自己内部滚动。
+  // 不算的话，内容一长底部就被 dock 盖死，而「清空筛选 / 收起」恰好在最底下。
+  function sizeFilterPanel() {
+    const panel = document.getElementById('find-filter-panel');
+    const anchor = document.querySelector('#view-find .range-slider-row');
+    const dock = document.getElementById('bottom-nav');
+    if (!panel || !anchor || !dock) return;
+    const a = anchor.getBoundingClientRect();
+    const GAP = 10;
+    const top = a.bottom + GAP;
+    const avail = dock.getBoundingClientRect().top - GAP - top;
+    panel.style.top = `${top}px`;
+    panel.style.left = `${a.left}px`;
+    panel.style.width = `${a.width}px`;
+    panel.style.maxHeight = `${Math.max(180, avail)}px`;
   }
 
   // 原生 <select> 样式改不动，跟旁边的胶囊按钮怎么排都不齐，换成点开弹层选
