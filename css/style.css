@@ -18,7 +18,7 @@
   --radius-md: 20px;
   --radius-sm: 14px;
   --radius-pill: 999px;
-  --nav-height: 64px;
+  --nav-height: 54px;
   color-scheme: light;
 }
 
@@ -117,14 +117,7 @@ input, select { font-family: inherit; }
 /* 选中的那个描粗一点，比单纯放大更像"实心态" */
 .nav-btn.active .nav-icon { transform: none; }
 .nav-btn.active .nav-icon svg { stroke-width: 2.1; }
-/* 参考图底栏那个小圆点指示器 */
-.nav-btn::after {
-  content: ""; width: 4px; height: 4px; border-radius: 50%;
-  background: var(--coral-dark); margin-top: 3px; opacity: 0;
-  transition: opacity 0.18s ease;
-}
-/* 指示器已经代表选中态了，小圆点撤掉，免得两套东西说同一件事 */
-.nav-btn::after { display: none; }
+/* 选中胶囊本身就是指示器，早先那个小圆点已经撤掉 */
 .nav-btn { position: relative; z-index: 1; }
 
 /* 切 tab 时主体内容淡入上移 */
