@@ -59,7 +59,7 @@ const Find = (() => {
         return;
       }
       resultsEl.innerHTML = pois.map((p, i) => `
-        <div class="link-row" data-idx="${i}" style="cursor:pointer; align-items:flex-start;">
+        <div class="link-row tappable" data-idx="${i}" style="cursor:pointer; align-items:flex-start;">
           <span style="flex:1;">
             <b>${Utils.escapeHTML(p.name)}</b><br>
             <span class="form-hint">${Utils.escapeHTML(p.address || '')}</span>

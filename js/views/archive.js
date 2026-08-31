@@ -401,7 +401,7 @@ const Archive = (() => {
       : '';
 
     const branchRowsHTML = sortBranches(branchList).map((r) => `
-      <div class="link-row" data-branch-id="${r.id}" style="cursor:pointer; align-items:flex-start;">
+      <div class="link-row tappable" data-branch-id="${r.id}" style="cursor:pointer; align-items:flex-start;">
         <span style="flex:1;">
           <b>${Utils.escapeHTML(r.name)}</b>${!r.location ? ` <span class="form-hint">${UI.icon('warn')}没坐标</span>` : ''}<br>
           <span class="form-hint">${[r.region, r.visitCount ? `去过 ${r.visitCount} 次` : null]

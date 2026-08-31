@@ -444,7 +444,7 @@ const WantGo = (() => {
       const f = (filter || '').trim().toLowerCase();
       const matches = f ? restaurants.filter((r) => r.name.toLowerCase().includes(f)) : restaurants.slice(0, 8);
       resultsEl.innerHTML = matches.map((r) => `
-        <div class="link-row" data-id="${r.id}" style="cursor:pointer;">
+        <div class="link-row tappable" data-id="${r.id}" style="cursor:pointer;">
           <span style="flex:1;">${UI.icon(r.status === 'approved' ? 'check' : 'bookmark')}${Utils.escapeHTML(r.name)}</span>
         </div>
       `).join('') || '<p class="form-hint">没有匹配的店</p>';

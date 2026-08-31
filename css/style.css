@@ -13,10 +13,11 @@
   --text-faint: #C9BBB4;
   --border: #F1E4DA;
   --danger: #E8604C;
-  --shadow: 0 4px 16px rgba(180, 130, 100, 0.10);
-  --radius-lg: 20px;
-  --radius-md: 16px;
-  --radius-sm: 12px;
+  --shadow: 0 6px 22px rgba(180, 130, 100, 0.12);
+  --radius-lg: 26px;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+  --radius-pill: 999px;
   --nav-height: 64px;
   color-scheme: light;
 }
@@ -35,7 +36,7 @@
     --text-secondary: #A8968D;
     --text-faint: #6E5F58;
     --border: #382F2A;
-    --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow: 0 6px 22px rgba(0, 0, 0, 0.38);
     color-scheme: dark;
   }
 }
@@ -63,8 +64,12 @@ input, select { font-family: inherit; }
   display: flex; align-items: center; justify-content: space-between;
   padding: calc(env(safe-area-inset-top) + 20px) 0 12px;
 }
-.page-header h1 { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
-.header-actions { display: flex; align-items: center; gap: 8px; }
+/* 参考图的排版：标题压得很大很紧，下面跟一行小字 */
+.page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.15; }
+.page-sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.page-header { align-items: flex-start; }
+.page-title-block { min-width: 0; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 4px; }
 
 /* ============ 底部导航 ============ */
 .bottom-nav {
@@ -91,12 +96,20 @@ input, select { font-family: inherit; }
 /* 选中的那个描粗一点，比单纯放大更像"实心态" */
 .nav-btn.active .nav-icon { transform: translateY(-1px); }
 .nav-btn.active .nav-icon svg { stroke-width: 2.1; }
+/* 参考图底栏那个小圆点指示器 */
+.nav-btn::after {
+  content: ""; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--coral-dark); margin-top: 3px; opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.nav-btn.active::after { opacity: 1; }
 
 /* ============ 按钮 ============ */
+/* 全圆角胶囊，跟参考图一致 */
 .btn {
-  border: none; border-radius: var(--radius-sm);
-  padding: 12px 18px; font-size: 15px; font-weight: 700;
-  cursor: pointer; min-height: 44px;
+  border: none; border-radius: var(--radius-pill);
+  padding: 13px 22px; font-size: 15px; font-weight: 700;
+  cursor: pointer; min-height: 46px;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   transition: transform 0.1s ease;
 }
@@ -130,11 +143,11 @@ input, select { font-family: inherit; }
 .card-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
 .card {
   background: var(--card-bg); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow); padding: 16px;
+  box-shadow: var(--shadow); padding: 18px;
 }
 .shop-card, .wish-card, .archive-card {
   background: var(--card-bg); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow); padding: 14px 16px;
+  box-shadow: var(--shadow); padding: 16px 18px;
   display: flex; flex-direction: column; gap: 8px;
 }
 .shop-card.decayed, .wish-card.decayed { opacity: 0.5; }
@@ -216,7 +229,11 @@ input, select { font-family: inherit; }
 .card-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 .card-note { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
 .card-actions { display: flex; gap: 8px; margin-top: 4px; }
-.card-actions .btn { flex: 1; }
+/* 一行三个按钮，胶囊那套 22px 的横向内边距在窄屏会把「认可」挤成两行 */
+.card-actions .btn {
+  flex: 1; min-width: 0; padding: 12px 8px; font-size: 14px; white-space: nowrap;
+}
+.card-actions .btn .ui-icon { margin-right: 2px; }
 
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--coral-light); color: var(--coral-dark); }
@@ -230,9 +247,9 @@ input, select { font-family: inherit; }
 /* ============ 快速添加 ============ */
 .quick-add-row { display: flex; gap: 8px; margin: 4px 0 14px; }
 .quick-add-row input {
-  flex: 1; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px 14px; font-size: 15px; background: var(--card-bg); color: var(--text);
-  min-height: 44px;
+  flex: 1; border: 1.5px solid var(--border); border-radius: var(--radius-pill);
+  padding: 13px 18px; font-size: 15px; background: var(--card-bg); color: var(--text);
+  min-height: 46px;
 }
 .quick-add-row input:focus { outline: none; border-color: var(--coral); }
 .quick-add-row .btn { min-width: 48px; padding: 12px; font-size: 20px; }
@@ -439,10 +456,10 @@ input, select { font-family: inherit; }
 .form-field { margin-bottom: 14px; }
 .form-field label { display: block; font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
 .form-field input[type="text"], .form-field input[type="number"], .form-field textarea, .form-field select {
-  width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  padding: 11px 13px; font-size: 15px; background: var(--card-bg); color: var(--text);
+  width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-pill);
+  padding: 13px 18px; font-size: 15px; background: var(--card-bg); color: var(--text);
 }
-.form-field textarea { min-height: 72px; resize: vertical; }
+.form-field textarea { min-height: 84px; resize: vertical; border-radius: var(--radius-md); }
 .form-field-inline { display: flex; align-items: center; gap: 10px; }
 .form-hint { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
 .chip-select-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -471,7 +488,17 @@ input, select { font-family: inherit; }
 }
 
 .link-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
-.link-row { display: flex; align-items: center; gap: 8px; background: var(--card-bg); border-radius: var(--radius-sm); padding: 8px 10px; border: 1.5px solid var(--border); }
+.link-row { display: flex; align-items: center; gap: 10px; background: var(--card-bg); border-radius: var(--radius-md); padding: 12px 14px; border: 1.5px solid var(--border); }
+/* 可点的行做成参考图那种内嵌胶囊：浅底、无描边、右侧带箭头 */
+.link-row.tappable {
+  background: var(--cream-light); border-color: transparent; padding: 14px 16px;
+}
+.link-row.tappable::after {
+  content: ""; width: 8px; height: 8px; flex-shrink: 0;
+  border-right: 2px solid var(--text-faint); border-top: 2px solid var(--text-faint);
+  transform: rotate(45deg); margin-left: 2px;
+}
+.link-row.tappable:active { background: var(--coral-light); transform: scale(0.99); }
 .link-icon { font-size: 16px; }
 .link-url { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--coral-dark); }
 .link-remove { background: none; border: none; color: var(--text-faint); font-size: 16px; cursor: pointer; }
@@ -486,6 +513,19 @@ input, select { font-family: inherit; }
 .detail-field { margin-bottom: 14px; }
 .detail-field label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
 .detail-field .value { font-size: 15px; }
+/* 纯「标签 + 值」的字段压成一行左右分列，省掉大半竖向空间；
+   带链接/分店列表那种块状内容的字段不受影响（用 :has 把它们排除在外）。
+   不支持 :has 的浏览器退回原来的上下堆叠，不影响可读性。 */
+.detail-field:has(> .value) {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  margin-bottom: 0; padding: 11px 2px; border-bottom: 1px solid var(--border);
+}
+.detail-field:has(> .value) label { margin-bottom: 0; flex-shrink: 0; }
+.detail-field:has(> .value) .value {
+  text-align: right; font-weight: 600; min-width: 0; overflow-wrap: anywhere;
+}
+/* 一组字段的最后一行不要底线 */
+.detail-field:has(> .value):not(:has(+ .detail-field > .value)) { border-bottom: none; margin-bottom: 12px; }
 .external-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .external-link-btn {
   display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px;
